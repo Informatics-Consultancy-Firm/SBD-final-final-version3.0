@@ -233,7 +233,7 @@ body{overflow-x:hidden;}
     <div class="fg">
       <label class="fl">Username</label>
       <div style="position:relative;">
-        <input class="fi" type="password" id="loginUser" placeholder="Enter your username" autocomplete="off"
+        <input class="fi" type="password" id="loginUser" placeholder="Enter your username" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"
           onkeydown="if(event.key==='Enter')doLogin()"
           style="padding-right:42px;">
         <button type="button" onclick="togglePwdVis('loginUser','eyeLogin')"
@@ -399,7 +399,7 @@ body{overflow-x:hidden;}
               <label class="fl">Conveyor Username</label>
               <div class="search-row">
                 <div style="position:relative;flex:1;">
-                  <input class="fi" type="password" id="driverSearch" placeholder="e.g. CNV-PL-01"
+                  <input class="fi" type="password" id="driverSearch" placeholder="e.g. CNV-PL-01" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"
                     onkeydown="if(event.key==='Enter')verifyDriver()"
                     style="padding-right:42px;width:100%;">
                   <button type="button" onclick="togglePwdVis('driverSearch','eyeConveyor')"
@@ -694,14 +694,14 @@ function populateDistrictSelect() {
 
 /* ── LOGIN ─────────────────────────────────────────────────── */
 function doLogin() {
-  const username = document.getElementById('loginUser').value.trim();
-  const errEl    = document.getElementById('loginErr');
+  const raw   = document.getElementById('loginUser').value.trim();
+  const errEl = document.getElementById('loginErr');
   errEl.classList.remove('show');
-  if (!username) { showLoginErr('Please enter your username.'); return; }
+  if (!raw) { showLoginErr('Please enter your username.'); return; }
   if (!Object.keys(users).length) { showLoginErr('Users not loaded yet — please wait.'); return; }
-  const u = users[username];
+  const u = users[raw];
   if (!u) { showLoginErr('Username not recognised. Contact your supervisor.'); return; }
-  currentUser = { ...u, username };
+  currentUser = { ...u, username: raw };
   stopLoginScanner();
   enterApp();
 }
@@ -899,26 +899,34 @@ function newDispatch() {
   setStep(1);
 }
 
-/* ── DRIVER VERIFY ────────────────────────────────────────── */
+/* ── CONVEYOR VERIFY ────────────────────────────────────────── */
 function verifyDriver() {
-  const username = document.getElementById('driverSearch').value.trim();
-  if (!username) { toast('Enter a driver username.','error'); return; }
-  const u = users[username];
-  const resultEl=document.getElementById('driverResult'), notFoundEl=document.getElementById('driverNotFound');
+  const raw      = document.getElementById('driverSearch').value.trim();
+  if (!raw) { toast('Enter a conveyor username.','error'); return; }
+  const u        = users[raw];
+  const resultEl = document.getElementById('driverResult');
+  const notFoundEl = document.getElementById('driverNotFound');
   if (!u || u.role !== 'Conveyor') {
-    resultEl.classList.remove('show'); notFoundEl.classList.add('show');
-    form.verifiedDriver=null; return;
+    resultEl.classList.remove('show');
+    notFoundEl.innerHTML = `
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+      Conveyor "<strong>${raw}</strong>" not found. Check username and try again.
+    `;
+    notFoundEl.classList.add('show');
+    form.verifiedDriver = null;
+    return;
   }
-  form.verifiedDriver=u; form.driverUsername=username; form.driverName=u.full_name;
-  document.getElementById('driverName').textContent=u.full_name;
-  document.getElementById('driverMeta').textContent=
-    u.district+(u.vehicle?' · Vehicle: '+u.vehicle:'')+(u.phone?' · '+u.phone:'');
-  resultEl.classList.add('show'); notFoundEl.classList.remove('show');
+  form.verifiedDriver = u; form.driverUsername = raw; form.driverName = u.full_name;
+  document.getElementById('driverName').textContent = u.full_name;
+  document.getElementById('driverMeta').textContent =
+    u.district + (u.vehicle ? ' · Vehicle: ' + u.vehicle : '') + (u.phone ? ' · ' + u.phone : '');
+  resultEl.classList.add('show');
+  notFoundEl.classList.remove('show');
   if (u.vehicle) {
-    const p=u.vehicle.split('-');
-    if (p.length>=2) { document.getElementById('vehLetters').value=p[0]; document.getElementById('vehNumbers').value=p[1]; updatePlate(); }
+    const p = u.vehicle.split('-');
+    if (p.length >= 2) { document.getElementById('vehLetters').value=p[0]; document.getElementById('vehNumbers').value=p[1]; updatePlate(); }
   }
-  toast('Conveyor '+u.full_name+' verified ✓','success');
+  toast('Conveyor ' + u.full_name + ' verified ✓', 'success');
 }
 
 function toggleDriverScanner() {
