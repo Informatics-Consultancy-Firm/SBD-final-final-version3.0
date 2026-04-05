@@ -7,7 +7,7 @@
 <meta name="theme-color" content="#004080">
 <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <style>
 :root{
@@ -335,10 +335,9 @@ body{overflow-x:hidden;}
           </div>
           <div class="card-body">
             <div class="fg">
-              <label class="fl">District <span style="color:var(--red)">*</span></label>
-              <select class="fsel" id="ds-district" onchange="cascadeChiefdom()">
-                <option value="">Select District...</option>
-              </select>
+              <label class="fl">District</label>
+              <input class="fi" type="text" id="ds-district" readonly
+                style="background:var(--gray);color:var(--navy);font-weight:600;cursor:not-allowed;">
             </div>
             <div class="fg">
               <label class="fl">Chiefdom <span style="color:var(--red)">*</span></label>
@@ -685,11 +684,16 @@ async function loadCascadeData() {
 }
 
 function populateDistrictSelect() {
-  const sel = document.getElementById('ds-district');
-  sel.innerHTML = '<option value="">Select District...</option>';
-  Object.keys(locationData).sort().forEach(d => {
-    const o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o);
-  });
+  // District is readonly — auto-filled from staff's district on login
+  // Nothing to populate here; enterApp sets the value directly
+}
+
+function setDistrictFromUser() {
+  const input = document.getElementById('ds-district');
+  if (!input) return;
+  input.value = currentUser.district || '';
+  // Trigger chiefdom cascade for the staff's district
+  cascadeChiefdom();
 }
 
 /* ── LOGIN ─────────────────────────────────────────────────── */
@@ -748,11 +752,7 @@ function enterApp() {
   if (currentUser.role === 'DMS Staff') {
     document.getElementById('dmsTabBar').style.display='flex';
     document.getElementById('drvTabBar').style.display='none';
-    populateDistrictSelect();
-    if (currentUser.district && locationData[currentUser.district]) {
-      document.getElementById('ds-district').value = currentUser.district;
-      cascadeChiefdom();
-    }
+    setDistrictFromUser();
     switchTab('dashboard');
   } else if (currentUser.role === 'Conveyor') {
     document.getElementById('drvTabBar').style.display='flex';
@@ -779,7 +779,7 @@ function switchTab(name) {
 
 /* ── CASCADE ──────────────────────────────────────────────── */
 function cascadeChiefdom() {
-  const d = document.getElementById('ds-district').value;
+  const d = document.getElementById('ds-district').value.trim();
   const chiefSel = document.getElementById('ds-chiefdom');
   const phuSel   = document.getElementById('ds-phu');
   chiefSel.innerHTML='<option value="">Select Chiefdom...</option>'; chiefSel.disabled=true;
@@ -796,7 +796,7 @@ function cascadeChiefdom() {
 }
 
 function cascadePHU() {
-  const d=document.getElementById('ds-district').value;
+  const d=document.getElementById('ds-district').value.trim();
   const c=document.getElementById('ds-chiefdom').value;
   const phuSel=document.getElementById('ds-phu');
   phuSel.innerHTML='<option value="">Select PHU...</option>'; phuSel.disabled=true;
@@ -824,7 +824,7 @@ function updatePlate() {
 
 /* ── DISPATCH STEPS ─────────────────────────────────────────── */
 function goStep2() {
-  const district=document.getElementById('ds-district').value;
+  const district=document.getElementById('ds-district').value.trim();
   const chiefdom=document.getElementById('ds-chiefdom').value;
   const phu=document.getElementById('ds-phu').value;
   const ig2=parseInt(document.getElementById('qty-ig2').value)||0;
@@ -893,9 +893,7 @@ function newDispatch() {
   document.getElementById('platePrev').textContent='— — —';
   stopDriverScanner();
   document.getElementById('step-receipt').style.display='none';
-  if (currentUser.district && locationData[currentUser.district]) {
-    document.getElementById('ds-district').value=currentUser.district; cascadeChiefdom();
-  } else { document.getElementById('ds-district').value=''; }
+  setDistrictFromUser();
   setStep(1);
 }
 
@@ -1008,8 +1006,6 @@ function showReceipt(r, synced) {
   // Generate QR code with full dispatch info
   const qrContainer = document.getElementById('receiptQR');
   qrContainer.innerHTML = '';
-  const canvas = document.createElement('canvas');
-  qrContainer.appendChild(canvas);
 
   const qrData = JSON.stringify({
     type:         'ICF-SL-ITN-MOVEMENT',
@@ -1021,18 +1017,22 @@ function showReceipt(r, synced) {
     ig2:          r.ig2_qty,
     pbo:          r.pbo_qty,
     total:        r.total_qty,
-    driver:       r.driver_name,
-    driver_user:  r.driver_username,
+    conveyor:     r.driver_name,
+    conveyor_user:r.driver_username,
     vehicle:      r.vehicle,
     staff:        r.staff_name,
     verify_code:  r.dispatch_id.slice(-6).toUpperCase()
   });
 
-  if (typeof QRCode !== 'undefined' && QRCode.toCanvas) {
-    QRCode.toCanvas(canvas, qrData, {
-      width: 200, margin: 2,
-      color: { dark:'#004080', light:'#ffffff' }
-    }, err => { if (err) { console.error('QR error', err); qrContainer.innerHTML='<div style="padding:20px;color:var(--red);">QR Error</div>'; } });
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(qrContainer, {
+      text:         qrData,
+      width:        200,
+      height:       200,
+      colorDark:    '#004080',
+      colorLight:   '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
   }
 
   // Show receipt, hide steps
@@ -1047,17 +1047,21 @@ function showReceipt(r, synced) {
 }
 
 function downloadReceipt() {
+  // qrcodejs generates a canvas inside the container
   const canvas = document.querySelector('#receiptQR canvas');
-  if (!canvas) { toast('QR code not available.','error'); return; }
-  const link=document.createElement('a');
+  const img    = document.querySelector('#receiptQR img');
+  const src    = canvas ? canvas.toDataURL('image/png') : (img ? img.src : null);
+  if (!src) { toast('QR code not available.','error'); return; }
+  const link = document.createElement('a');
   link.download = (lastRecord ? lastRecord.dispatch_id : 'dispatch') + '-qr.png';
-  link.href = canvas.toDataURL('image/png');
+  link.href = src;
   link.click();
 }
 
 function printReceipt() {
   const canvas = document.querySelector('#receiptQR canvas');
-  const qrSrc = canvas ? canvas.toDataURL('image/png') : '';
+  const qrImg  = document.querySelector('#receiptQR img');
+  const qrSrc  = canvas ? canvas.toDataURL('image/png') : (qrImg ? qrImg.src : '');
   const r = lastRecord || {};
   const win = window.open('','_blank');
   win.document.write(`
@@ -1228,11 +1232,15 @@ function renderDriverQR() {
   container.innerHTML='';
   const canvas=document.createElement('canvas');
   container.appendChild(canvas);
-  if (typeof QRCode!=='undefined'&&QRCode.toCanvas) {
-    QRCode.toCanvas(canvas, u.username, {
-      width:170, margin:2,
-      color:{dark:'#004080',light:'#ffffff'}
-    }, err => { if(err) console.error(err); });
+  if (typeof QRCode !== 'undefined') {
+    new QRCode(container, {
+      text:         u.username,
+      width:        160,
+      height:       160,
+      colorDark:    '#004080',
+      colorLight:   '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M
+    });
   } else {
     container.innerHTML='<div style="font-size:20px;font-weight:700;color:var(--navy);padding:16px;letter-spacing:3px;">'+u.username+'</div>';
   }
