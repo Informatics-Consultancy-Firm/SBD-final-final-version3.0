@@ -485,7 +485,7 @@
                 </div>
 
                 <!-- FORM CONTENT -->
-                <div id="mainFormWrap">
+                <div id="mainFormWrap" style="display:none;">
 
 
 
@@ -865,38 +865,42 @@
 
 <!-- ENTRY METHOD CHOICE MODAL -->
 <div id="entryMethodModal" style="display:none;position:fixed;inset:0;background:rgba(0,20,40,.7);z-index:5000;align-items:center;justify-content:center;padding:20px;">
-    <div style="background:#fff;border-radius:18px;padding:28px 22px;max-width:360px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.4);border-top:5px solid #ffc107;">
-        <div style="text-align:center;margin-bottom:20px;">
-            <div style="width:56px;height:56px;background:#e8f1fb;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 12px;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#004080" stroke-width="2" width="26" height="26"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    <div style="background:#fff;border-radius:18px;padding:26px 22px;max-width:340px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.4);border-top:5px solid #ffc107;">
+        <!-- Title -->
+        <div style="font-family:'Oswald',sans-serif;font-size:16px;font-weight:700;color:#004080;letter-spacing:.5px;margin-bottom:6px;">HOW WILL YOU IDENTIFY THE SCHOOL?</div>
+        <div style="font-size:11px;color:#607080;margin-bottom:18px;">Select one option then tap PROCEED</div>
+
+        <!-- Radio: QR -->
+        <label id="em-lbl-qr" onclick="window.selectEntryMethod('qr')"
+            style="display:flex;align-items:center;gap:12px;border:2px solid #dde5ee;border-radius:12px;padding:14px;margin-bottom:10px;cursor:pointer;transition:all .2s;">
+            <div style="width:20px;height:20px;border-radius:50%;border:2px solid #004080;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="em-radio-qr">
+                <div id="em-dot-qr" style="width:10px;height:10px;border-radius:50%;background:#004080;display:none;"></div>
             </div>
-            <div style="font-family:'Oswald',sans-serif;font-size:17px;font-weight:700;color:#004080;letter-spacing:.5px;">HOW WILL YOU ENTER THE SCHOOL?</div>
-            <div style="font-size:11px;color:#607080;margin-top:4px;">Select your preferred entry method</div>
-        </div>
-        <!-- QR SCAN option -->
-        <button onclick="window.chooseEntryMethod('qr')"
-            style="width:100%;background:linear-gradient(135deg,#002952,#004080);color:#fff;border:none;border-radius:12px;padding:16px;margin-bottom:10px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:12px;text-align:left;touch-action:manipulation;">
-            <div style="width:42px;height:42px;background:#ffc107;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#004080" stroke-width="2" width="22" height="22"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M17 14v3M14 17h3"/></svg>
+            <div style="flex:1;">
+                <div style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:#004080;">📷 SCAN QR CODE</div>
+                <div style="font-size:10px;color:#607080;margin-top:2px;">Camera scans school QR and auto-fills all fields</div>
             </div>
-            <div>
-                <div>📷 SCAN QR CODE</div>
-                <div style="font-size:10px;font-weight:400;color:rgba(255,255,255,.7);margin-top:2px;">Fast — camera scans school QR and auto-fills all fields</div>
+        </label>
+
+        <!-- Radio: Manual -->
+        <label id="em-lbl-manual" onclick="window.selectEntryMethod('manual')"
+            style="display:flex;align-items:center;gap:12px;border:2px solid #dde5ee;border-radius:12px;padding:14px;cursor:pointer;transition:all .2s;">
+            <div style="width:20px;height:20px;border-radius:50%;border:2px solid #004080;display:flex;align-items:center;justify-content:center;flex-shrink:0;" id="em-radio-manual">
+                <div id="em-dot-manual" style="width:10px;height:10px;border-radius:50%;background:#004080;display:none;"></div>
             </div>
-        </button>
-        <!-- MANUAL option -->
-        <button onclick="window.chooseEntryMethod('manual')"
-            style="width:100%;background:#fff;color:#004080;border:2px solid #004080;border-radius:12px;padding:16px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:12px;text-align:left;touch-action:manipulation;">
-            <div style="width:42px;height:42px;background:#e8f1fb;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="#004080" stroke-width="2" width="22" height="22"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+            <div style="flex:1;">
+                <div style="font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:#004080;">✍ MANUAL ENTRY</div>
+                <div style="font-size:10px;color:#607080;margin-top:2px;">Select District → Chiefdom → PHU → School</div>
             </div>
-            <div>
-                <div>✍ MANUAL ENTRY</div>
-                <div style="font-size:10px;font-weight:400;color:#607080;margin-top:2px;">Select District → Chiefdom → PHU → School from dropdowns</div>
-            </div>
+        </label>
+
+        <!-- PROCEED button — disabled until selection -->
+        <button id="em-proceed-btn" onclick="window.proceedEntryMethod()" disabled
+            style="width:100%;margin-top:16px;padding:13px;background:#ccc;color:#fff;border:none;border-radius:10px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.5px;cursor:not-allowed;transition:all .2s;">
+            PROCEED →
         </button>
         <button onclick="document.getElementById('entryMethodModal').style.display='none'"
-            style="width:100%;background:none;border:none;color:#999;font-family:'Oswald',sans-serif;font-size:11px;cursor:pointer;margin-top:10px;padding:6px;">
+            style="width:100%;background:none;border:none;color:#aaa;font-family:'Oswald',sans-serif;font-size:11px;cursor:pointer;margin-top:8px;padding:4px;">
             CANCEL
         </button>
     </div>
@@ -974,8 +978,9 @@
                                     </div>
                                     <div class="form-group"><label class="form-label">HEAD TEACHER NAME <span class="required">*</span></label><input type="text" class="form-input name-field" name="head_teacher" id="head_teacher" required><div class="field-error" id="error_head_teacher">Name must contain only letters</div></div>
                                     <div class="form-group"><label class="form-label">HEAD TEACHER PHONE <span class="required">*</span></label><input type="tel" class="form-input" name="head_teacher_phone" id="head_teacher_phone" required pattern="[0-9]{9}" maxlength="9"><div class="field-hint">Enter 9-digit phone number</div><div class="field-error" id="error_head_teacher_phone">Please enter a valid 9-digit phone number</div></div>
-                                    <div class="form-group"><label class="form-label">EMIS NUMBER</label><input type="text" class="form-input" name="emis_number" id="emis_number" placeholder="e.g. 12345"><div class="field-hint">School EMIS code (auto-filled from QR if available)</div></div>
-                                    <div class="form-group"><label class="form-label">SCHOOL STATUS</label><select class="form-input" name="school_status" id="school_status"><option value="">Select...</option><option value="Old">Old</option><option value="New">New</option></select><div class="field-hint">Auto-filled from QR if available</div></div>
+                                    <div class="form-group"><label class="form-label">SCHOOL ENROLLMENT <span class="required">*</span></label><input type="number" class="form-input" name="school_enrollment" id="school_enrollment" min="0" placeholder="Total pupils enrolled" required><div class="field-hint">Auto-populated from school data · Read-only</div><div class="field-error" id="error_school_enrollment">This field is required</div></div>
+                                    <div class="form-group"><label class="form-label">EMIS NUMBER</label><input type="text" class="form-input" name="emis_number" id="emis_number" placeholder="e.g. 12345"><div class="field-hint">Auto-populated from school data · Read-only</div></div>
+                                    <div class="form-group"><label class="form-label">SCHOOL STATUS <span class="required">*</span></label><select class="form-input" name="school_status" id="school_status" required><option value="">Select...</option><option value="Old">Old (existing in target list)</option><option value="New">New (not in target list)</option></select><div class="field-hint">Auto-populated from school data · Read-only</div><div class="field-error" id="error_school_status">Please select school status</div></div>
                                     <div class="form-group"><label class="form-label">DATE OF DISTRIBUTION <span class="required">*</span></label><input type="date" class="form-input" name="distribution_date" id="distribution_date" required><div class="field-error" id="error_distribution_date">This field is required</div></div>
 
                                     <div class="navigation-buttons">
@@ -1194,10 +1199,8 @@
                 </div><!-- /mainFormScroll --></div><!-- /mainFormWrap -->
 
                 <!-- FOOTER -->
-                <div class="page-footer">
-                    <p class="footer-main">School-Based Distribution of ITNs - Sierra Leone</p>
-                    <div class="footer-partners">Ministry of Health | NMCP | PMI Evolve</div>
-                    <p class="footer-copy">&copy; 2025 Informatics Consultancy Firm-Sierra Leone (ICF-SL)</p>
+                <div style="text-align:center;padding:10px 16px;font-size:10px;color:#aaa;border-top:1px solid #e0e0e0;letter-spacing:.3px;">
+                    SBD 2026 · ICF-SL · MoHS · NMCP · PMI Evolve
                 </div>
 
             </div>
@@ -1696,22 +1699,52 @@
 let _qrFilled = false;
 let _qrScanner = null;
 
-// Called when DATA ENTRY tab is unlocked — scroll to form and show intro
+// Called when DATA ENTRY tab is unlocked — show form and scroll to it
 window.openDataEntry = function() {
-    // Scroll to form
     const wrap = document.getElementById('mainFormWrap');
-    if (wrap) wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    // Make sure section 1 is active
-    const s = window.state;
-    if (s && s.currentSection !== 1) {
-        // Already in progress — just scroll, don't reset
+    if (wrap) {
+        wrap.style.display = 'block';
+        setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
     }
 };
 
 // Called by START SURVEY button on section 1
 window.showEntryMethodModal = function() {
+    // Reset radio state
+    ['qr','manual'].forEach(m => {
+        const dot  = document.getElementById('em-dot-'+m);
+        const lbl  = document.getElementById('em-lbl-'+m);
+        if(dot) dot.style.display = 'none';
+        if(lbl) { lbl.style.borderColor='#dde5ee'; lbl.style.background=''; }
+    });
+    const btn = document.getElementById('em-proceed-btn');
+    if(btn) { btn.disabled=true; btn.style.background='#ccc'; btn.style.cursor='not-allowed'; }
+    window._selectedEntryMethod = null;
     const modal = document.getElementById('entryMethodModal');
     if (modal) modal.style.display = 'flex';
+};
+
+window.selectEntryMethod = function(method) {
+    window._selectedEntryMethod = method;
+    // Update radio visuals
+    ['qr','manual'].forEach(m => {
+        const dot = document.getElementById('em-dot-'+m);
+        const lbl = document.getElementById('em-lbl-'+m);
+        if(dot) dot.style.display = m===method ? 'block' : 'none';
+        if(lbl) {
+            lbl.style.borderColor = m===method ? '#004080' : '#dde5ee';
+            lbl.style.background  = m===method ? '#e8f1fb' : '';
+        }
+    });
+    // Enable PROCEED
+    const btn = document.getElementById('em-proceed-btn');
+    if(btn) { btn.disabled=false; btn.style.background='#004080'; btn.style.cursor='pointer'; }
+};
+
+window.proceedEntryMethod = function() {
+    const method = window._selectedEntryMethod;
+    if (!method) return;
+    window.chooseEntryMethod(method);
 };
 
 window.chooseEntryMethod = function(method) {
@@ -1770,8 +1803,18 @@ window.processSchoolQR = function(raw) {
     try { data = JSON.parse(raw); } catch {
         showNotification('⛔ Invalid QR — not an ICF-SL school QR code', 'error'); return;
     }
-    if (!data.school_name && !data.schoolName) {
-        showNotification('⛔ QR code does not contain school data', 'error'); return;
+
+    // Check all required fields
+    const missing = [];
+    if (!data.school_name && !data.schoolName)   missing.push('School Name');
+    if (!data.district)                           missing.push('District');
+    if (!data.chiefdom)                           missing.push('Chiefdom');
+    if (!data.facility && !data.phu)              missing.push('Health Facility');
+    if (!data.community)                          missing.push('Community');
+
+    if (missing.length > 0) {
+        showNotification('⛔ QR missing required fields: ' + missing.join(', '), 'error');
+        return;
     }
 
     const school     = data.school_name   || data.schoolName   || '';
@@ -1890,6 +1933,13 @@ window.clearQRFill = function() {
         // Remove QR-added options
         [...el.options].filter(o => o.getAttribute('data-qr-added')).forEach(o => o.remove());
     });
+    // Also clear EMIS, enrollment, status
+    const emisEl = document.getElementById('emis_number');
+    if (emisEl) { emisEl.value = ''; emisEl.readOnly = false; }
+    const enrEl = document.getElementById('school_enrollment');
+    if (enrEl) { enrEl.value = ''; enrEl.readOnly = false; }
+    const stEl = document.getElementById('school_status');
+    if (stEl) { stEl.value = ''; stEl.style.background = ''; stEl.style.borderColor = ''; stEl.style.pointerEvents = ''; }
     const banner = document.getElementById('qrFilledBanner');
     if (banner) banner.style.display = 'none';
     const btn = document.getElementById('qrScanBtn');
