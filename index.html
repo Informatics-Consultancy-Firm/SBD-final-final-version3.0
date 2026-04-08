@@ -485,7 +485,7 @@
                 </div>
 
                 <!-- FORM CONTENT -->
-                <div id="mainFormWrap" style="display:none;">
+                <div id="mainFormWrap">
 
 
 
@@ -830,6 +830,7 @@
                     </style>
 
                     <!-- FORM CARD -->
+                    <div id="formCardWrap" style="display:none;">
                     <div class="form-card">
                         <div class="form-content">
                             <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
@@ -1196,7 +1197,7 @@
                             </form>
                         </div>
                     </div>
-                </div><!-- /mainFormScroll --></div><!-- /mainFormWrap -->
+                </div><!-- /formCardWrap --></div><!-- /mainFormScroll --></div><!-- /mainFormWrap -->
 
                 <!-- FOOTER -->
                 <div style="text-align:center;padding:10px 16px;font-size:10px;color:#aaa;border-top:1px solid #e0e0e0;letter-spacing:.3px;">
@@ -1701,10 +1702,12 @@ let _qrScanner = null;
 
 // Called when DATA ENTRY tab is unlocked — show form and scroll to it
 window.openDataEntry = function() {
-    const wrap = document.getElementById('mainFormWrap');
+    const wrap = document.getElementById('formCardWrap');
     if (wrap) {
         wrap.style.display = 'block';
-        setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+        setTimeout(() => {
+            wrap.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }, 100);
     }
 };
 
