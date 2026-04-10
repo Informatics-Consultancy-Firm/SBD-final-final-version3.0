@@ -713,10 +713,20 @@ function loadLocationData() {
                     ALL_LOCATION_DATA[d][c][fac][com].push(sch);
 
                     // Store school metadata for auto-fill
+                    // Try all common spellings for each column
+                    const _enr = csvCol(row,
+                        'School enrollment', 'School Enrollment', 'school_enrollment',
+                        'enrollment', 'Enrollment', 'ENROLLMENT') || '';
+                    const _emis = csvCol(row,
+                        'EMIS Number', 'EMIS number', 'emis_number',
+                        'emis', 'EMIS', 'Emis Number') || '';
+                    const _status = csvCol(row,
+                        'School Status', 'school_status', 'status',
+                        'Status', 'STATUS', 'School status') || '';
                     window.CSV_SCHOOL_DATA[fullKey] = {
-                        enrollment: csvCol(row, 'School enrollment', 'enrollment', 'school_enrollment') || '',
-                        emis:       csvCol(row, 'EMIS Number',       'emis_number', 'emis')            || '',
-                        status:     csvCol(row, 'School Status',     'school_status', 'status')        || ''
+                        enrollment: _enr,
+                        emis:       _emis,
+                        status:     _status
                     };
                     loaded++;
                 });
@@ -738,6 +748,9 @@ function loadLocationData() {
                 window.ALL_LOCATION_DATA = ALL_LOCATION_DATA;   // ai_agent.js reads window.ALL_LOCATION_DATA
                 window.LOCATION_DATA     = ALL_LOCATION_DATA;
 
+                // Debug — log first few CSV_SCHOOL_DATA entries
+                const _sampleKeys = Object.keys(window.CSV_SCHOOL_DATA).slice(0,3);
+                _sampleKeys.forEach(k => console.log('[CSV_SCHOOL_DATA]', k, '->', JSON.stringify(window.CSV_SCHOOL_DATA[k])));
                 const dCount = Object.keys(ALL_LOCATION_DATA).length;
                 console.log(`[CSV] ${loaded} rows loaded → ${dCount} district(s). Skipped: ${skipped}`);
                 if (dCount === 0) {
@@ -938,20 +951,37 @@ function setupSchoolSubmissionCheck() {
         if (mb)  mb.style.display  = 'block';
         if (key && nav) nav.style.display = 'flex';
 
-        // ── Fill school metadata from CSV (same as cascading) ───
-        const enrEl  = document.getElementById('school_enrollment');
-        const emisEl = document.getElementById('emis_number');
-        const stEl   = document.getElementById('school_status');
-        const meta   = window.CSV_SCHOOL_DATA && window.CSV_SCHOOL_DATA[key];
+        // ── Auto-populate from CSV when school selected ──────────
+        const meta = window.CSV_SCHOOL_DATA && window.CSV_SCHOOL_DATA[key];
+        const enrGrp  = document.getElementById('enrollment-group');
+        const emisGrp = document.getElementById('emis-group');
+        const stGrp   = document.getElementById('status-group');
+        const enrEl   = document.getElementById('school_enrollment');
+        const emisEl  = document.getElementById('emis_number');
+        const stEl    = document.getElementById('school_status');
+
         if (meta) {
-            if (enrEl)  enrEl.value  = meta.enrollment || '';
-            if (emisEl) emisEl.value = meta.emis       || '';
-            if (stEl)   stEl.value   = meta.status     || '';
+            // Enrollment
+            if (meta.enrollment && enrEl && enrGrp) {
+                enrEl.value = meta.enrollment;
+                enrGrp.style.display = 'block';
+            } else if (enrGrp) enrGrp.style.display = 'none';
+
+            // EMIS
+            if (meta.emis && emisEl && emisGrp) {
+                emisEl.value = meta.emis;
+                emisGrp.style.display = 'block';
+            } else if (emisGrp) emisGrp.style.display = 'none';
+
+            // Status — always show if available (Old or New from CSV)
+            if (meta.status && stEl && stGrp) {
+                stEl.value = meta.status;
+                stGrp.style.display = 'block';
+            } else if (stGrp) stGrp.style.display = 'none';
         } else {
-            // School not in CSV — clear fields
-            if (enrEl)  enrEl.value  = '';
-            if (emisEl) emisEl.value = '';
-            if (stEl)   stEl.value   = '';
+            // School not in CSV — hide and clear all
+            [enrEl, emisEl, stEl].forEach(function(el) { if(el) el.value = ''; });
+            [enrGrp, emisGrp, stGrp].forEach(function(g) { if(g) g.style.display = 'none'; });
         }
 
         // Reset state when school changes
