@@ -2280,10 +2280,11 @@ function showThankYouModal(data, offline) {
                     <div id="tySummary" style="background:#f0f9f3;border:2px solid #b2dfcc;border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px;"></div>
                     <div style="text-align:center;padding:10px 0 4px;">
                         <div style="font-family:'Oswald',sans-serif;font-size:15px;font-weight:700;color:#28a745;letter-spacing:.4px;">✅ SUBMISSION COMPLETE</div>
-                        <div style="font-size:12px;color:#607080;margin-top:6px;">Hand device back to your supervisor.</div>
-                        <div style="margin-top:14px;background:#fff8e1;border:1px solid #ffc107;border-radius:8px;padding:10px;font-size:11px;color:#8a6500;">
-                            🔒 This session is now closed. Only a supervisor can start a new entry.
-                        </div>
+                        <div style="font-size:12px;color:#607080;margin-top:6px;" id="tySubtitle2"></div>
+                        <button onclick="window.startNewEntry()"
+                            style="margin-top:16px;width:100%;padding:13px;background:#004080;color:#fff;border:none;border-radius:10px;font-family:'Oswald',sans-serif;font-size:14px;font-weight:700;letter-spacing:.6px;cursor:pointer;text-transform:uppercase;">
+                            ➕ START NEW ENTRY
+                        </button>
                     </div>
                 </div>
             </div>
@@ -2325,16 +2326,21 @@ function showThankYouModal(data, offline) {
         </div>`;
 
     document.getElementById('thankYouModal').classList.add('show');
-
-    // Lock form — hide it and mark session as done
-    window._sessionSubmitted = true;
-    const formCard = document.getElementById('formCardWrap');
-    if (formCard) formCard.style.display = 'none';
-    // Lock DATA ENTRY tab — remove from unlocked sessions
-    if (window._unlocked) window._unlocked['dataentry'] = false;
 }
 
-// doAnotherSubmission removed — one submission per session
+window.startNewEntry = function() {
+    document.getElementById('thankYouModal')?.classList.remove('show');
+    resetForm();
+    // Reset entry method so modal shows again for next school
+    window._entryMethod = null;
+    // Scroll back to top of form
+    const wrap = document.getElementById('formCardWrap');
+    if (wrap) {
+        wrap.style.display = 'block';
+        setTimeout(() => wrap.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100);
+    }
+    showNotification('Form cleared — ready for next school.', 'success');
+};
 
 function markSchoolSubmitted(data) {
     const key=makeSchoolKey(data.district,data.chiefdom,data.facility,data.community,data.school_name);
