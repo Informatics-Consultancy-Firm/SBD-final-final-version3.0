@@ -258,8 +258,8 @@ body{overflow-x:hidden;}
     <button class="logout-pill" onclick="doLogout()">LOGOUT</button>
   </div>
 
-  <!-- DMS tabs -->
-  <div id="dmsTabBar" class="tab-bar" style="display:none;">
+  <!-- Single tab bar for all users -->
+  <div id="mainTabBar" class="tab-bar" style="display:none;">
     <button class="tab-btn active" id="tab-dashboard" onclick="switchTab('dashboard')">
       <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>DASHBOARD
     </button>
@@ -271,16 +271,6 @@ body{overflow-x:hidden;}
     </button>
     <button class="tab-btn" id="tab-pending" onclick="switchTab('pending')">
       <svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115.36-6.36L21 8M3 22v-6h6M21 12a9 9 0 01-15.36 6.36L3 16"/></svg>SYNC
-    </button>
-  </div>
-
-  <!-- Driver tabs -->
-  <div id="drvTabBar" class="tab-bar" style="display:none;">
-    <button class="tab-btn active" id="tab-myqr" onclick="switchTab('myqr')">
-      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M17 14v3M14 17h3"/></svg>MY QR ID
-    </button>
-    <button class="tab-btn" id="tab-mytrips" onclick="switchTab('mytrips')">
-      <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>MY TRIPS
     </button>
   </div>
 
@@ -365,16 +355,8 @@ body{overflow-x:hidden;}
             <span class="card-title">STEP 2 — VERIFY DRIVER</span>
           </div>
           <div class="card-body">
-            <p style="font-size:11px;color:var(--text-s);margin-bottom:12px;">Scan the conveyor's SBD QR ID card to verify their identity.</p>
-            <div class="fg" style="text-align:center;">
-              <button class="btn btn-navy" onclick="toggleDriverScanner()" id="btnScanDriver" style="margin:8px auto;">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M17 14v3M14 17h3"/></svg>
-                SCAN DRIVER QR ID CARD
-              </button>
-            </div>
-            <div id="driverScannerWrap" style="display:none;">
-              <div class="inline-scanner"><div id="driverQrReader"></div></div>
-            </div>
+            <p style="font-size:11px;color:var(--text-s);margin-bottom:12px;">Your details are pre-filled from your login QR card.</p>
+
             <div class="driver-result" id="driverResult">
               <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                 <span style="background:var(--green);color:#fff;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;">
@@ -719,6 +701,7 @@ function doLogout() {
   currentUser=null; form={};
   document.getElementById('loginErr').classList.remove('show');
   document.getElementById('scr-app').classList.remove('active');
+  document.getElementById('mainTabBar').style.display='none';
   document.getElementById('scr-login').classList.add('active');
 }
 
@@ -729,39 +712,36 @@ function enterApp() {
   document.getElementById('topbarSub').textContent =
     currentUser.full_name + ' · ' + currentUser.role + ' · ' + currentUser.district;
 
-  var role = (currentUser.role || '').trim();
+  // One interface for everyone — pre-populate from QR
+  document.getElementById('mainTabBar').style.display = 'flex';
 
-  // Allowed DMS roles (from QR generator)
-  var DMS_ROLES = ['National Monitor','SQOs','District Supervisor','Chiefdom Supervisor','DHMT','DMS Staff'];
-  var isConveyor = role === 'Conveyor';
-  var isDMS      = DMS_ROLES.indexOf(role) !== -1;
+  // Pre-fill district and cascade
+  var dist = currentUser.district || '';
+  var distEl = document.getElementById('ds-district');
+  if (distEl) distEl.value = dist;
+  if (dist) cascadeChiefdom();
 
-  if (!isConveyor && !isDMS) {
-    document.getElementById('scr-login').classList.add('active');
-    document.getElementById('scr-app').classList.remove('active');
-    showLoginErr('Access denied. Role "' + role + '" is not authorised to use this app.');
-    currentUser = null;
-    return;
+  // Pre-populate conveyor info in Step 2 from logged-in user
+  form.verifiedDriver   = currentUser;
+  form.driverName       = currentUser.full_name || '';
+  form.driverUsername   = currentUser.username  || '';
+  form.driverPhone      = currentUser.phone      || '';
+  form.driverDistrict   = currentUser.district   || '';
+
+  // Show conveyor info card in Step 2 immediately
+  var resultEl = document.getElementById('driverResult');
+  if (resultEl) {
+    document.getElementById('driverName').textContent     = form.driverName;
+    document.getElementById('driverPhone').textContent    = form.driverPhone;
+    document.getElementById('driverDistrict').textContent = form.driverDistrict;
+    resultEl.classList.add('show');
   }
 
-  if (isDMS) {
-    document.getElementById('dmsTabBar').style.display='flex';
-    document.getElementById('drvTabBar').style.display='none';
-    var dist = currentUser.district || '';
-    var inputEl = document.getElementById('ds-district');
-    if (inputEl) inputEl.value = dist;
-    if (dist) cascadeChiefdom();
-    switchTab('dashboard');
-  } else {
-    document.getElementById('drvTabBar').style.display='flex';
-    document.getElementById('dmsTabBar').style.display='none';
-    renderDriverQR();
-    switchTab('myqr');
-  }
+  switchTab('dashboard');
 }
 
 /* ── TABS ──────────────────────────────────────────────────── */
-const ALL_PANELS = ['dashboard','dispatch','records','pending','myqr','mytrips'];
+const ALL_PANELS = ['dashboard','dispatch','records','pending'];
 function switchTab(name) {
   ALL_PANELS.forEach(p => {
     document.getElementById('panel-'+p)?.classList.remove('active');
@@ -822,11 +802,14 @@ function goStep2() {
   const district=document.getElementById('ds-district').value;
   const chiefdom=document.getElementById('ds-chiefdom').value;
   const phu=document.getElementById('ds-phu').value;
-  const ig2=parseInt(document.getElementById('qty-ig2').value)||0;
-  const pbo=parseInt(document.getElementById('qty-pbo').value)||0;
+  const dualai=parseInt(document.getElementById('qty-dualai').value)||0;
   if (!district||!chiefdom||!phu) { toast('Select District, Chiefdom and PHU.','error'); return; }
-  if (ig2+pbo===0) { toast('Enter at least one ITN quantity.','error'); return; }
-  form.district=district; form.chiefdom=chiefdom; form.phu=phu; form.ig2=ig2; form.pbo=pbo;
+  if (dualai===0) { toast('Enter Dual-AI ITN quantity.','error'); return; }
+  // Hard duplicate check
+  const dupKey=(district+'|'+chiefdom+'|'+phu).toLowerCase();
+  const dup=dispatches.find(r=>((r.destination_district||'')+'|'+(r.chiefdom||'')+'|'+(r.phu||'')).toLowerCase()===dupKey);
+  if (dup) { toast('This PHU already has a dispatch — '+dup.dispatch_id,'error'); return; }
+  form.district=district; form.chiefdom=chiefdom; form.phu=phu; form.dualai=dualai;
   setStep(2);
 }
 
@@ -878,8 +861,19 @@ function newDispatch() {
   document.getElementById('ds-chiefdom').innerHTML='<option value="">Select Chiefdom...</option>'; document.getElementById('ds-chiefdom').disabled=true;
   document.getElementById('ds-phu').innerHTML='<option value="">Select PHU...</option>'; document.getElementById('ds-phu').disabled=true;
   document.getElementById('cnt-chiefdom').textContent=''; document.getElementById('cnt-phu').textContent='';
-  document.getElementById('driverSearch').value='';
-  document.getElementById('driverResult').classList.remove('show');
+  // Re-populate from logged-in user
+  form.verifiedDriver = currentUser;
+  form.driverName     = currentUser.full_name || '';
+  form.driverUsername = currentUser.username  || '';
+  form.driverPhone    = currentUser.phone     || '';
+  form.driverDistrict = currentUser.district  || '';
+  var driverResultEl = document.getElementById('driverResult');
+  if (driverResultEl) {
+    document.getElementById('driverName').textContent     = form.driverName;
+    document.getElementById('driverPhone').textContent    = form.driverPhone;
+    document.getElementById('driverDistrict').textContent = form.driverDistrict;
+    driverResultEl.classList.add('show');
+  }
   document.getElementById('driverNotFound').classList.remove('show');
   document.getElementById('vehLetters').value=''; document.getElementById('vehNumbers').value='';
   document.getElementById('platePrev').textContent='— — —';
