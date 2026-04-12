@@ -1307,4 +1307,1313 @@ function toast(msg, type='') {
 }
 </script>
 </body>
+</html><!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>ICF‑SL · ITN Movement</title>
+<meta name="theme-color" content="#004080">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<style>
+:root{
+  --navy:#004080;--navy-d:#002952;--navy-l:#e8f1fb;
+  --gold:#c8991a;--gold-l:#fff8e1;
+  --green:#1a9e45;--green-l:#e6f7ec;--green-d:#0e6b2e;
+  --red:#c82333;--red-l:#fde8ea;
+  --orange:#e67e22;--orange-l:#fff0e0;
+  --gray:#f0f4f8;--border:#dde3ee;
+  --text:#0d1b2a;--text-s:#4a5568;
+  --shadow:0 4px 20px rgba(0,0,0,.08);
+  --r:12px;
+}
+*{box-sizing:border-box;margin:0;padding:0;}
+html,body{font-family:'Oswald',sans-serif;background:var(--gray);color:var(--text);min-height:100%;}
+body{overflow-x:hidden;}
+
+.screen{display:none;min-height:100vh;flex-direction:column;}
+.screen.active{display:flex;}
+
+/* LOGIN */
+#scr-login{background:linear-gradient(155deg,var(--navy-d) 0%,var(--navy) 60%,#005a9e 100%);align-items:center;justify-content:center;padding:24px 16px;}
+.login-card{background:#fff;border-radius:20px;padding:28px 24px;width:100%;max-width:380px;box-shadow:0 20px 50px rgba(0,0,0,.35);border-top:5px solid var(--gold);}
+.login-logo{width:64px;height:64px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;}
+.login-logo img{width:100%;height:100%;object-fit:cover;}
+.login-title{font-size:18px;font-weight:700;color:var(--navy);text-align:center;letter-spacing:.5px;}
+.login-sub{font-size:11px;color:var(--text-s);text-align:center;letter-spacing:.5px;text-transform:uppercase;margin-bottom:16px;}
+.login-divider{width:40px;height:3px;background:var(--gold);margin:8px auto 14px;}
+.login-or{text-align:center;font-size:11px;color:var(--text-s);margin:10px 0;position:relative;}
+.login-or::before,.login-or::after{content:'';position:absolute;top:50%;width:38%;height:1px;background:var(--border);}
+.login-or::before{left:0;}.login-or::after{right:0;}
+.login-err{display:none;background:var(--red-l);border:1px solid var(--red);color:var(--red);border-radius:7px;padding:9px;font-size:11px;text-align:center;margin-top:10px;}
+.login-err.show{display:block;}
+.qr-scan-box{border:2px solid var(--navy);border-radius:10px;overflow:hidden;margin:10px 0;position:relative;}
+.qr-scan-box #loginQrReader{width:100%!important;}
+.qr-scan-box #loginQrReader img{display:none!important;}
+.qr-scan-close{position:absolute;top:8px;right:8px;z-index:10;background:rgba(0,0,0,.6);color:#fff;border:none;border-radius:50%;width:28px;height:28px;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;}
+
+/* TOPBAR */
+.topbar{background:var(--navy);height:54px;padding:0 14px;display:flex;align-items:center;gap:10px;box-shadow:0 3px 12px rgba(0,0,0,.2);flex-shrink:0;position:sticky;top:0;z-index:100;}
+.topbar-title{font-size:14px;font-weight:600;color:#fff;letter-spacing:.5px;flex:1;}
+.topbar-sub{font-size:10px;color:rgba(255,255,255,.6);}
+.logout-pill{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.25);color:#fff;border-radius:6px;padding:4px 10px;font-size:10px;font-family:'Oswald',sans-serif;letter-spacing:.5px;cursor:pointer;white-space:nowrap;}
+
+/* TABS */
+.tab-bar{background:#fff;border-bottom:2px solid var(--gold);display:flex;flex-shrink:0;overflow-x:auto;scrollbar-width:none;}
+.tab-bar::-webkit-scrollbar{display:none;}
+.tab-btn{flex-shrink:0;flex:1;min-width:72px;padding:11px 6px;border:none;background:none;font-family:'Oswald',sans-serif;font-size:10px;font-weight:600;letter-spacing:.4px;color:var(--text-s);text-transform:uppercase;border-bottom:3px solid transparent;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:all .15s;}
+.tab-btn svg{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:2;}
+.tab-btn.active{color:var(--navy);border-bottom-color:var(--gold);background:#f4f8ff;}
+
+/* CONTENT */
+.content{flex:1;padding:14px 14px 70px;max-width:720px;width:100%;margin:0 auto;}
+@media(min-width:600px){.content{padding:18px 20px 70px;}}
+.tab-panel{display:none;}
+.tab-panel.active{display:block;}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:10px 16px;border:none;border-radius:9px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;letter-spacing:.5px;cursor:pointer;transition:all .2s;}
+.btn svg{width:14px;height:14px;stroke:currentColor;fill:none;stroke-width:2;flex-shrink:0;}
+.btn-navy{background:var(--navy);color:#fff;}.btn-navy:hover{background:#003060;}
+.btn-green{background:var(--green);color:#fff;}.btn-green:hover{filter:brightness(1.1);}
+.btn-gold{background:var(--gold);color:#fff;}
+.btn-outline{background:#fff;color:var(--navy);border:2px solid var(--navy);}
+.btn-gray{background:var(--gray);color:var(--text-s);border:1px solid var(--border);}
+.btn-full{width:100%;}
+.btn:disabled{opacity:.5;cursor:not-allowed;}
+.btn-row{display:flex;gap:8px;}
+.btn-row .btn{flex:1;}
+
+/* FORM */
+.fl{display:block;font-size:10px;font-weight:600;letter-spacing:1.2px;color:var(--text-s);text-transform:uppercase;margin-bottom:5px;}
+.fi{width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:9px;font-family:'Oswald',sans-serif;font-size:13px;color:var(--text);outline:none;background:#fff;transition:border .2s;}
+.fi:focus{border-color:var(--navy);}
+.fi:read-only{background:var(--gray);}
+.fg{margin-bottom:12px;}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:360px){.frow{grid-template-columns:1fr;}}
+.fsel{width:100%;padding:10px 12px;border:2px solid var(--border);border-radius:9px;font-family:'Oswald',sans-serif;font-size:13px;color:var(--text);background:#fff;outline:none;cursor:pointer;}
+.fsel:focus{border-color:var(--navy);}
+.fsel:disabled{background:var(--gray);color:#aaa;cursor:not-allowed;}
+.cascade-cnt{font-size:10px;color:var(--green-d);margin-top:3px;}
+.qty-total-bar{background:var(--navy);color:#fff;border-radius:9px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:4px;}
+
+/* CARDS */
+.card{background:#fff;border-radius:var(--r);box-shadow:var(--shadow);overflow:hidden;margin-bottom:12px;}
+.card-hdr{padding:11px 15px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border);}
+.card-hdr.navy{background:var(--navy-l);}
+.card-hdr.gold{background:var(--gold-l);}
+.card-hdr.green{background:var(--green-l);}
+.card-hdr svg{width:15px;height:15px;fill:none;stroke-width:2;flex-shrink:0;}
+.card-hdr.navy svg{stroke:var(--navy);}
+.card-hdr.gold svg{stroke:var(--gold);}
+.card-hdr.green svg{stroke:var(--green-d);}
+.card-title{font-size:11px;font-weight:600;letter-spacing:.5px;}
+.card-hdr.navy .card-title{color:var(--navy);}
+.card-hdr.gold .card-title{color:#8a6500;}
+.card-hdr.green .card-title{color:var(--green-d);}
+.card-body{padding:14px 15px;}
+
+/* STATS */
+.stat-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(80px,1fr));gap:8px;margin-bottom:14px;}
+.stat-box{background:#fff;border-radius:10px;padding:12px 8px;text-align:center;box-shadow:var(--shadow);border-top:3px solid var(--border);}
+.stat-box.navy{border-top-color:var(--navy);}
+.stat-box.green{border-top-color:var(--green);}
+.stat-box.gold{border-top-color:var(--gold);}
+.stat-box.orange{border-top-color:var(--orange);}
+.stat-n{font-size:24px;font-weight:700;color:var(--navy);}
+.stat-box.green .stat-n{color:var(--green-d);}
+.stat-box.gold .stat-n{color:#8a6500;}
+.stat-box.orange .stat-n{color:var(--orange);}
+.stat-l{font-size:10px;color:var(--text-s);margin-top:3px;}
+
+/* STEPS */
+.form-steps{display:flex;align-items:center;margin-bottom:18px;}
+.fs-dot{width:26px;height:26px;border-radius:50%;border:3px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:#aaa;flex-shrink:0;transition:all .3s;}
+.fs-dot.active{border-color:var(--navy);color:var(--navy);}
+.fs-dot.done{background:var(--green);border-color:var(--green);color:#fff;}
+.fs-line{flex:1;height:3px;background:var(--border);margin:0 4px;transition:background .3s;}
+.fs-line.done{background:var(--green);}
+
+/* DISPATCH RECORD */
+.dispatch-card{background:#fff;border-radius:10px;border:2px solid var(--border);padding:12px 14px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,.05);}
+.dispatch-card.synced{border-color:#b2dfcc;}
+.dispatch-card.pending{border-color:#ffe082;}
+.dc-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:5px;}
+.dc-id{font-size:13px;font-weight:700;color:var(--navy);}
+.dc-date{font-size:10px;color:var(--text-s);}
+.dc-location{font-size:12px;color:var(--text);margin-bottom:6px;display:flex;align-items:center;gap:5px;}
+.dc-location svg{width:12px;height:12px;stroke:var(--navy);fill:none;stroke-width:2;flex-shrink:0;}
+.dc-pills{display:flex;flex-wrap:wrap;gap:4px;}
+.pill{display:inline-flex;align-items:center;gap:3px;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:600;letter-spacing:.3px;}
+.pill svg{width:10px;height:10px;stroke:currentColor;fill:none;stroke-width:2;}
+.pill-navy{background:var(--navy-l);color:var(--navy);}
+.pill-green{background:var(--green-l);color:var(--green-d);}
+.pill-gold{background:var(--gold-l);color:#8a6500;}
+.pill-orange{background:var(--orange-l);color:var(--orange);}
+.pill-gray{background:var(--gray);color:var(--text-s);}
+.no-data{text-align:center;padding:40px 20px;color:var(--text-s);font-size:13px;}
+.no-data svg{width:38px;height:38px;stroke:#c0ccd8;fill:none;display:block;margin:0 auto 10px;}
+
+/* DRIVER QR CARD */
+.qr-id-card{background:linear-gradient(135deg,var(--navy-d),var(--navy));border-radius:16px;padding:24px;color:#fff;text-align:center;border:3px solid var(--gold);}
+.qr-id-card .qr-wrap{background:#fff;border-radius:10px;padding:10px;display:inline-flex;align-items:center;justify-content:center;margin:12px auto;}
+.qr-id-name{font-size:20px;font-weight:700;margin-bottom:4px;}
+.qr-id-role{font-size:11px;color:rgba(255,255,255,.65);letter-spacing:.8px;text-transform:uppercase;}
+.qr-id-badge{background:rgba(200,153,26,.25);border:1px solid rgba(200,153,26,.6);color:var(--gold);padding:4px 14px;border-radius:20px;font-size:11px;display:inline-block;margin-top:8px;letter-spacing:.8px;}
+
+/* RECEIPT */
+.receipt-card{background:#fff;border-radius:16px;border:3px solid var(--gold);box-shadow:0 8px 30px rgba(0,0,0,.12);overflow:hidden;margin-bottom:14px;}
+.receipt-header{background:linear-gradient(135deg,var(--navy-d),var(--navy));padding:16px 20px;text-align:center;}
+.receipt-header-logo{width:48px;height:48px;margin:0 auto 10px;}
+.receipt-header-logo img{width:100%;height:100%;object-fit:cover;}
+.receipt-header h2{font-size:16px;font-weight:700;color:#fff;letter-spacing:.8px;}
+.receipt-header p{font-size:10px;color:rgba(255,255,255,.6);margin-top:2px;letter-spacing:.5px;text-transform:uppercase;}
+.receipt-qr-section{padding:18px;text-align:center;border-bottom:2px dashed var(--border);}
+.receipt-qr-section p{font-size:11px;color:var(--text-s);margin-top:10px;}
+.receipt-qr-badge{background:var(--gold-l);border:1px solid var(--gold);color:#8a6500;padding:4px 14px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;margin-bottom:10px;letter-spacing:.5px;}
+#receiptQR{display:inline-block;padding:10px;background:#fff;border-radius:10px;border:2px solid var(--navy);}
+#receiptQR canvas{display:block;}
+.receipt-body{padding:16px;}
+.receipt-section-title{font-size:10px;font-weight:700;letter-spacing:1.2px;color:var(--text-s);text-transform:uppercase;border-bottom:1px solid var(--border);padding-bottom:6px;margin-bottom:10px;margin-top:14px;}
+.receipt-section-title:first-child{margin-top:0;}
+.receipt-row{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.receipt-row:last-child{border-bottom:none;}
+.rk{color:var(--text-s);}
+.rv{font-weight:600;color:var(--text);text-align:right;max-width:60%;}
+.receipt-total{background:var(--navy);color:#fff;border-radius:9px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;margin-top:12px;}
+.receipt-total span{font-size:12px;opacity:.8;}
+.receipt-total strong{font-size:22px;font-weight:700;}
+.receipt-footer{background:var(--navy-l);padding:12px 16px;text-align:center;font-size:10px;color:var(--text-s);border-top:1px solid var(--border);}
+.receipt-footer strong{color:var(--navy);}
+
+/* DRIVER SCANNER IN FORM */
+.inline-scanner{border:2px solid var(--navy);border-radius:10px;overflow:hidden;margin-top:8px;position:relative;}
+.inline-scanner #driverQrReader{width:100%!important;}
+.inline-scanner #driverQrReader img{display:none!important;}
+
+/* DRIVER RESULT */
+.driver-result{background:var(--green-l);border:2px solid var(--green);border-radius:9px;padding:11px;margin-top:10px;display:none;}
+.driver-result.show{display:block;}
+.driver-not-found{background:var(--red-l);border:2px solid var(--red);border-radius:9px;padding:10px;margin-top:10px;font-size:12px;color:var(--red);display:none;text-align:center;}
+.driver-not-found.show{display:block;}
+
+/* SUMM */
+.summ-item{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px;}
+.summ-item:last-child{border-bottom:none;}
+.sk{color:var(--text-s);}
+.sv{font-weight:600;color:var(--text);}
+
+/* ALERT */
+.alert{display:flex;align-items:flex-start;gap:9px;padding:10px 13px;border-radius:9px;font-size:12px;margin-bottom:12px;}
+.alert svg{width:15px;height:15px;fill:none;stroke-width:2;flex-shrink:0;margin-top:1px;}
+.alert.success{background:var(--green-l);border:1px solid #b2dfcc;} .alert.success svg{stroke:var(--green-d);}
+.alert.warn{background:var(--gold-l);border:1px solid #ffe082;} .alert.warn svg{stroke:#8a6500;}
+
+/* TOAST */
+.notif{position:fixed;bottom:-60px;left:50%;transform:translateX(-50%);background:var(--navy-d);color:#fff;padding:11px 22px;border-radius:12px;font-size:13px;z-index:9999;transition:bottom .3s;white-space:nowrap;max-width:92vw;text-align:center;box-shadow:0 8px 28px rgba(0,0,0,.3);}
+.notif.show{bottom:22px;}
+.notif.success{background:var(--green-d);}
+.notif.error{background:var(--red);}
+
+/* SPINNER */
+.spin{width:15px;height:15px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .6s linear infinite;display:inline-block;}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+.search-row{display:flex;gap:8px;}
+.search-row .fi{flex:1;}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="scr-login" class="screen active">
+  <div class="login-card">
+    <div class="login-logo">
+      <img src="ICF-SL.jpg" alt="ICF-SL"
+        onerror="this.src='https://github.com/mohamedsillahkanu/gdp-dashboard-2/raw/6c7463b0d5c3be150aafae695a4bcbbd8aeb1499/ICF-SL.jpg';this.onerror=null;">
+    </div>
+    <div class="login-title">ICF‑SL ITN MOVEMENT</div>
+    <div class="login-divider"></div>
+    <div class="login-sub">DMS to PHU Dispatch Tracking</div>
+    <p style="font-size:12px;color:var(--text-s);text-align:center;margin-bottom:16px;">Scan your SBD staff QR ID card to sign in</p>
+    <button class="btn btn-navy btn-full" onclick="toggleLoginScanner()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="15" height="15"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/><path d="M14 14h3v3M17 14v3M14 17h3"/></svg>
+      SCAN QR ID CARD
+    </button>
+    <div id="loginScannerWrap" style="display:none;">
+      <div class="qr-scan-box">
+        <div id="loginQrReader"></div>
+        <button class="qr-scan-close" onclick="stopLoginScanner()">✕</button>
+      </div>
+    </div>
+    <div class="login-err" id="loginErr"></div>
+    <div style="text-align:center;margin-top:12px;font-size:10px;color:var(--text-s);">
+      <span id="loginStatus">Scan your SBD QR ID card</span>
+    </div>
+  </div>
+</div>
+
+<!-- MAIN APP -->
+<div id="scr-app" class="screen">
+  <div class="topbar">
+    <div style="flex:1;min-width:0;">
+      <div class="topbar-title">ICF‑SL ITN MOVEMENT</div>
+      <div class="topbar-sub" id="topbarSub" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></div>
+    </div>
+    <button class="logout-pill" onclick="doLogout()">LOGOUT</button>
+  </div>
+
+  <!-- Single tab bar for all users -->
+  <div id="mainTabBar" class="tab-bar" style="display:none;">
+    <button class="tab-btn active" id="tab-dashboard" onclick="switchTab('dashboard')">
+      <svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg>DASHBOARD
+    </button>
+    <button class="tab-btn" id="tab-dispatch" onclick="switchTab('dispatch')">
+      <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>DISPATCH
+    </button>
+    <button class="tab-btn" id="tab-records" onclick="switchTab('records')">
+      <svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg>RECORDS
+    </button>
+    <button class="tab-btn" id="tab-pending" onclick="switchTab('pending')">
+      <svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115.36-6.36L21 8M3 22v-6h6M21 12a9 9 0 01-15.36 6.36L3 16"/></svg>SYNC
+    </button>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="tab-panel active" id="panel-dashboard">
+      <div class="stat-row" id="dashStats"></div>
+      <div class="card">
+        <div class="card-hdr navy">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          <span class="card-title">RECENT DISPATCHES</span>
+        </div>
+        <div class="card-body" id="dashRecent"></div>
+      </div>
+    </div>
+
+    <!-- DISPATCH FORM -->
+    <div class="tab-panel" id="panel-dispatch">
+      <div class="form-steps">
+        <div class="fs-dot active" id="step1dot">1</div>
+        <div class="fs-line" id="line12"></div>
+        <div class="fs-dot" id="step2dot">2</div>
+        <div class="fs-line" id="line23"></div>
+        <div class="fs-dot" id="step3dot">3</div>
+      </div>
+
+      <!-- Step 1 -->
+      <div id="step1">
+        <div class="card">
+          <div class="card-hdr navy">
+            <svg viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+            <span class="card-title">STEP 1 — DESTINATION</span>
+          </div>
+          <div class="card-body">
+            <div class="fg">
+              <label class="fl">District</label>
+              <input class="fi" type="text" id="ds-district" readonly
+                style="background:var(--gray);color:var(--navy);font-weight:700;cursor:not-allowed;">
+            </div>
+            <div class="fg">
+              <label class="fl">Chiefdom <span style="color:var(--red)">*</span></label>
+              <select class="fsel" id="ds-chiefdom" disabled onchange="cascadePHU()">
+                <option value="">Select Chiefdom...</option>
+              </select>
+              <div class="cascade-cnt" id="cnt-chiefdom"></div>
+            </div>
+            <div class="fg">
+              <label class="fl">Health Facility / PHU <span style="color:var(--red)">*</span></label>
+              <select class="fsel" id="ds-phu" disabled>
+                <option value="">Select PHU...</option>
+              </select>
+              <div class="cascade-cnt" id="cnt-phu"></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-hdr gold">
+            <svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/><path d="M16 21V5a2 2 0 00-2-2h-4a2 2 0 00-2 2v16"/></svg>
+            <span class="card-title">ITN QUANTITIES</span>
+          </div>
+          <div class="card-body">
+            <div class="fg">
+              <label class="fl">DUAL-AI ITNs <span style="color:var(--red)">*</span></label>
+              <input class="fi" type="number" id="qty-dualai" min="0" value="0" placeholder="Enter quantity">
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:14px;">
+              <button class="btn btn-navy" onclick="goStep2()">
+                NEXT — VERIFY DRIVER
+                <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 2 -->
+      <div id="step2" style="display:none;">
+        <div class="card">
+          <div class="card-hdr navy">
+            <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+            <span class="card-title">STEP 2 — VERIFY DRIVER</span>
+          </div>
+          <div class="card-body">
+            <p style="font-size:11px;color:var(--text-s);margin-bottom:12px;">Your details are pre-filled from your login QR card.</p>
+
+            <div class="driver-result" id="driverResult">
+              <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                <span style="background:var(--green);color:#fff;padding:3px 10px;border-radius:20px;font-size:10px;font-weight:700;">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" width="10" height="10" style="vertical-align:middle;margin-right:2px;"><polyline points="20 6 9 17 4 12"/></svg>
+                  VERIFIED
+                </span>
+              </div>
+              <div style="font-size:15px;font-weight:700;color:var(--green-d);" id="driverName"></div>
+              <div style="font-size:11px;color:var(--text-s);margin-top:3px;" id="driverMeta"></div>
+            </div>
+            <div class="driver-not-found" id="driverNotFound">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16" style="vertical-align:middle;margin-right:4px;"><circle cx="12" cy="12" r="10"/><line x1="15" y1="9" x2="9" y2="15"/><line x1="9" y1="9" x2="15" y2="15"/></svg>
+              Conveyor not found. Ensure they scan their SBD ID card.
+            </div>
+            <div class="fg" style="margin-top:14px;">
+              <label class="fl">Vehicle Plate <span style="color:var(--red)">*</span></label>
+              <div class="frow">
+                <input class="fi" type="text" id="vehLetters" maxlength="3" placeholder="ABC" style="text-transform:uppercase;"
+                  oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'');updatePlate()">
+                <input class="fi" type="text" id="vehNumbers" maxlength="3" placeholder="123"
+                  oninput="this.value=this.value.replace(/[^0-9]/g,'');updatePlate()">
+              </div>
+              <div id="platePrev" style="background:var(--navy);color:#fff;border-radius:7px;padding:8px;text-align:center;font-size:20px;letter-spacing:.2em;margin-top:6px;font-weight:700;">— — —</div>
+            </div>
+            <div class="btn-row" style="margin-top:14px;">
+              <button class="btn btn-gray" onclick="backToStep1()">
+                <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>BACK
+              </button>
+              <button class="btn btn-navy" onclick="goStep3()">
+                REVIEW
+                <svg viewBox="0 0 24 24"><path d="M9 18l6-6-6-6"/></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 3 Review -->
+      <div id="step3" style="display:none;">
+        <div class="card">
+          <div class="card-hdr green">
+            <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+            <span class="card-title">STEP 3 — REVIEW & SUBMIT</span>
+          </div>
+          <div class="card-body">
+            <div id="reviewContent"></div>
+            <div class="btn-row" style="margin-top:16px;">
+              <button class="btn btn-gray" onclick="backToStep2()">
+                <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>BACK
+              </button>
+              <button class="btn btn-green" id="submitDispatch" onclick="showConfirm()">
+                <svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+                SUBMIT DISPATCH
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Receipt (after submit) -->
+      <div id="step-receipt" style="display:none;">
+
+        <div class="alert success" style="margin-bottom:14px;">
+          <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+          <div><strong>Dispatch recorded successfully.</strong> Share or print the receipt below.</div>
+        </div>
+
+        <div class="receipt-card" id="receiptPrintArea">
+          <div class="receipt-header">
+            <div class="receipt-header-logo">
+              <img src="ICF-SL.jpg" alt="ICF-SL"
+                onerror="this.src='https://github.com/mohamedsillahkanu/gdp-dashboard-2/raw/6c7463b0d5c3be150aafae695a4bcbbd8aeb1499/ICF-SL.jpg';this.onerror=null;">
+            </div>
+            <h2>ICF‑SIERRA LEONE</h2>
+            <p>ITN Distribution — Movement Receipt</p>
+          </div>
+
+          <div class="receipt-qr-section">
+            <div class="receipt-qr-badge" id="receiptDispatchBadge">—</div>
+            <br>
+            <div id="receiptQR"></div>
+            <p>Scan QR to verify this dispatch at the PHU</p>
+          </div>
+
+          <div class="receipt-body">
+            <div class="receipt-section-title">DISPATCH INFORMATION</div>
+            <div class="receipt-row"><span class="rk">Dispatch ID</span><span class="rv" id="r-dispatch-id"></span></div>
+            <div class="receipt-row"><span class="rk">Date &amp; Time</span><span class="rv" id="r-datetime"></span></div>
+            <div class="receipt-row"><span class="rk">DMS Staff</span><span class="rv" id="r-staff"></span></div>
+            <div class="receipt-row"><span class="rk">Staff Username</span><span class="rv" id="r-staff-user"></span></div>
+            <div class="receipt-row"><span class="rk">District</span><span class="rv" id="r-staff-district"></span></div>
+
+            <div class="receipt-section-title">DESTINATION</div>
+            <div class="receipt-row"><span class="rk">District</span><span class="rv" id="r-dest-district"></span></div>
+            <div class="receipt-row"><span class="rk">Chiefdom</span><span class="rv" id="r-chiefdom"></span></div>
+            <div class="receipt-row"><span class="rk">Health Facility (PHU)</span><span class="rv" id="r-phu"></span></div>
+
+            <div class="receipt-section-title">ITN DETAILS</div>
+            <div class="receipt-row"><span class="rk">ITN Type</span><span class="rv">Dual-AI</span></div>
+            <div class="receipt-total">
+              <span>TOTAL ITNs DISPATCHED</span>
+              <strong id="r-total"></strong>
+            </div>
+
+            <div class="receipt-section-title" style="margin-top:14px;">TRANSPORT</div>
+            <div class="receipt-row"><span class="rk">Conveyor Name</span><span class="rv" id="r-driver"></span></div>
+            <div class="receipt-row"><span class="rk">Conveyor Username</span><span class="rv" id="r-driver-user"></span></div>
+            <div class="receipt-row"><span class="rk">Vehicle Plate</span><span class="rv" id="r-vehicle"></span></div>
+
+            <div class="receipt-section-title" style="margin-top:14px;">VERIFICATION CODE</div>
+            <div style="text-align:center;background:var(--navy-l);border-radius:9px;padding:12px;margin-top:4px;">
+              <div style="font-size:22px;font-weight:700;color:var(--navy);letter-spacing:4px;" id="r-verify-code"></div>
+              <div style="font-size:10px;color:var(--text-s);margin-top:4px;">Last 6 digits of Dispatch ID</div>
+            </div>
+          </div>
+
+          <div class="receipt-footer">
+            <strong>ICF‑Sierra Leone</strong> · ITN Distribution Movement Receipt<br>
+            Generated: <span id="r-generated"></span>
+          </div>
+        </div>
+
+        <div class="btn-row" style="margin-bottom:12px;">
+          <button class="btn btn-gold" onclick="downloadReceipt()">
+            <svg viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            DOWNLOAD QR
+          </button>
+          <button class="btn btn-outline" onclick="printReceipt()">
+            <svg viewBox="0 0 24 24"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 01-2-2v-5a2 2 0 012-2h16a2 2 0 012 2v5a2 2 0 01-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+            PRINT RECEIPT
+          </button>
+        </div>
+        <button class="btn btn-navy btn-full" onclick="newDispatch()">
+          <svg viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          NEW DISPATCH
+        </button>
+      </div>
+    </div>
+
+    <!-- RECORDS -->
+    <div class="tab-panel" id="panel-records">
+      <div id="recordsList"></div>
+    </div>
+
+    <!-- SYNC -->
+    <div class="tab-panel" id="panel-pending">
+      <div class="stat-row" id="syncStats"></div>
+      <button class="btn btn-gold btn-full" onclick="retrySyncAll()" style="margin-bottom:14px;">
+        <svg viewBox="0 0 24 24"><path d="M21 2v6h-6M3 12a9 9 0 0115.36-6.36L21 8M3 22v-6h6M21 12a9 9 0 01-15.36 6.36L3 16"/></svg>
+        RETRY ALL PENDING
+      </button>
+      <div id="syncLog"></div>
+    </div>
+
+    <!-- MY QR (Driver) -->
+    <div class="tab-panel" id="panel-myqr">
+      <div class="qr-id-card">
+        <div style="font-size:10px;color:rgba(255,255,255,.55);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:6px;">ICF-SL · ITN Distribution Sierra Leone</div>
+        <div class="qr-wrap" id="driverQrCard"></div>
+        <div class="qr-id-name" id="driverCardName"></div>
+        <div class="qr-id-role">Conveyor</div>
+        <div class="qr-id-badge" id="driverCardDistrict"></div>
+        <div style="margin-top:8px;font-size:11px;color:rgba(255,255,255,.7);" id="driverCardVehicle"></div>
+        <div style="margin-top:10px;font-size:10px;color:rgba(255,255,255,.45);">
+          Show this QR code to DMS staff when collecting ITNs for verification
+        </div>
+      </div>
+      <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--text-s);">
+        Username: <strong id="driverCardUsername"></strong>
+      </div>
+    </div>
+
+    <!-- MY TRIPS (Driver) -->
+    <div class="tab-panel" id="panel-mytrips">
+      <div id="myTripsList"></div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /scr-app -->
+
+<div class="notif" id="notif"></div>
+
+<!-- CONFIRMATION MODAL -->
+<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:9000;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;max-width:360px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35);border-top:5px solid var(--gold);overflow:hidden;">
+    <div style="background:linear-gradient(135deg,var(--navy-d),var(--navy));padding:16px 20px;display:flex;align-items:center;gap:10px;">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--gold)" stroke-width="2" width="22" height="22"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      <span style="font-size:14px;font-weight:700;color:#fff;letter-spacing:.5px;">CONFIRM SUBMISSION</span>
+    </div>
+    <div style="padding:18px 20px;">
+      <p style="font-size:13px;color:var(--text-s);margin-bottom:14px;line-height:1.6;">Please review the details below before submitting. This cannot be undone.</p>
+      <div id="confirmSummary" style="background:var(--gray);border-radius:10px;padding:12px 14px;margin-bottom:16px;font-size:12px;"></div>
+      <p style="font-size:13px;font-weight:700;color:var(--text);text-align:center;margin-bottom:16px;">Is everything correct?</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <button onclick="closeConfirm()" style="padding:12px;background:#fff;border:2px solid var(--border);border-radius:10px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:var(--text-s);cursor:pointer;letter-spacing:.5px;">
+          ← GO BACK
+        </button>
+        <button onclick="confirmAndSubmit()" style="padding:12px;background:var(--green);border:none;border-radius:10px;font-family:'Oswald',sans-serif;font-size:13px;font-weight:700;color:#fff;cursor:pointer;letter-spacing:.5px;">
+          YES, SUBMIT ✓
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+const GAS_URL      = 'https://script.google.com/macros/s/AKfycbymRy-M5v0fVLWUjw4IXYhd1oIR2ZvnP_Dzr_iGR-Th0cMIpmE2ntGeujWYH7-C6NHIzA/exec';
+// Users loaded from QR scan — no CSV needed
+const CASCADE_CSV  = 'dms_cascading.csv';
+const STORAGE_KEY  = 'icf_itn_moves';
+const STORAGE_PEND = 'icf_itn_moves_pending';
+
+let users        = {};
+let locationData = {};
+let currentUser  = null;
+let dispatches   = JSON.parse(localStorage.getItem(STORAGE_KEY)  || '[]');
+let pending      = JSON.parse(localStorage.getItem(STORAGE_PEND) || '[]');
+let form         = {};
+let loginScanner = null;
+let driverScanner = null;
+let lastRecord   = null; // for receipt download
+
+window.addEventListener('DOMContentLoaded', async () => {
+    try {
+    await loadCascadeData();
+    document.getElementById('loginStatus').textContent = 'Ready — scan your SBD QR ID card';
+  } catch(e) {
+    document.getElementById('loginStatus').textContent = 'Ready — scan your SBD QR ID card';
+  }
+});
+
+async function loadUsers() {
+  const res = await fetch(USERS_CSV);
+  if (!res.ok) throw new Error('Cannot load ' + USERS_CSV);
+  Papa.parse(await res.text(), {
+    header:true, skipEmptyLines:true,
+    complete: r => r.data.forEach(row => {
+      const u = (row.username||'').trim(); if (!u) return;
+      users[u] = { full_name:(row.full_name||'').trim(), role:(row.role||'').trim(),
+                   district:(row.district||'').trim(), staff_id:(row.staff_id||'').trim(),
+                   vehicle:(row.vehicle||'').trim(), phone:(row.phone||'').trim() };
+    })
+  });
+}
+
+async function loadCascadeData() {
+  const res = await fetch(CASCADE_CSV);
+  if (!res.ok) return;
+  Papa.parse(await res.text(), {
+    header:true, skipEmptyLines:true,
+    complete: r => {
+      locationData = {};
+      r.data.forEach(row => {
+        const d=(row.District||row.district||row.adm1||'').trim(), c=(row.Chiefdom||row.chiefdom||row.adm2||'').trim(), p=(row.Facility||row.facility||row.phu||row.hf||'').trim();
+        if (!d||!c||!p) return;
+        if (!locationData[d]) locationData[d]={};
+        if (!locationData[d][c]) locationData[d][c]=new Set();
+        locationData[d][c].add(p);
+      });
+      for (const d in locationData)
+        for (const c in locationData[d])
+          locationData[d][c] = Array.from(locationData[d][c]).sort();
+      populateDistrictSelect();
+    }
+  });
+}
+
+function populateDistrictSelect() {
+  const sel = document.getElementById('ds-district');
+  sel.innerHTML = '<option value="">Select District...</option>';
+  Object.keys(locationData).sort().forEach(d => {
+    const o=document.createElement('option'); o.value=d; o.textContent=d; sel.appendChild(o);
+  });
+}
+
+/* ── LOGIN ─────────────────────────────────────────────────── */
+function doLogin(qrText) {
+  const errEl = document.getElementById('loginErr');
+  errEl.classList.remove('show');
+  if (!qrText) { showLoginErr('No QR data received.'); return; }
+
+  // Parse SBD ID QR: "Name: X\nID: Y\nRole: Z\nDistrict: W\nTel: V"
+  var parsed = { name:'', id:'', role:'', district:'', tel:'' };
+  if (qrText.indexOf('Name:') !== -1 || qrText.indexOf('ID:') !== -1) {
+    qrText.split('\n').forEach(function(line) {
+      var s = line.indexOf(':'); if (s === -1) return;
+      var k = line.substring(0, s).trim().toLowerCase();
+      var v = line.substring(s + 1).trim();
+      if (k === 'name')     parsed.name     = v;
+      if (k === 'id')       parsed.id       = v;
+      if (k === 'role')     parsed.role     = v;
+      if (k === 'district') parsed.district = v;
+      if (k === 'tel')      parsed.tel      = v;
+    });
+  } else {
+    try { var o = JSON.parse(qrText); parsed.id = o.id||o.ID||qrText; parsed.name = o.name||o.Name||''; parsed.role = o.role||o.Role||''; parsed.district = o.district||o.District||''; parsed.tel = o.tel||o.phone||''; }
+    catch(e) { parsed.id = qrText.trim(); }
+  }
+
+  // Use QR data directly — no CSV lookup needed
+  if (!parsed.name) { showLoginErr('Could not read name from QR. Use your SBD ID card.'); return; }
+  if (!parsed.role) { showLoginErr('Role not found in QR. Use your SBD ID card.'); return; }
+
+  currentUser = {
+    username:  parsed.id || parsed.name,
+    full_name: parsed.name,
+    role:      parsed.role,
+    district:  parsed.district,
+    phone:     parsed.tel
+  };
+  stopLoginScanner();
+  enterApp();
+}
+
+function showLoginErr(msg) {
+  const el = document.getElementById('loginErr');
+  el.textContent = msg; el.classList.add('show');
+}
+
+function toggleLoginScanner() {
+  const wrap = document.getElementById('loginScannerWrap');
+  if (wrap.style.display==='none') {
+    wrap.style.display='block';
+    if (typeof Html5Qrcode==='undefined') { showLoginErr('QR scanner not available.'); return; }
+    loginScanner = new Html5Qrcode('loginQrReader');
+    loginScanner.start({facingMode:'environment'},{fps:10,qrbox:{width:220,height:220}},
+      decoded => { stopLoginScanner(); doLogin(decoded.trim()); },
+      () => {}
+    ).catch(err => { showLoginErr('Camera error: '+err); wrap.style.display='none'; });
+  } else { stopLoginScanner(); }
+}
+
+function stopLoginScanner() {
+  if (loginScanner) { loginScanner.stop().catch(()=>{}); loginScanner=null; }
+  document.getElementById('loginScannerWrap').style.display='none';
+}
+
+function doLogout() {
+  stopLoginScanner(); stopDriverScanner();
+  currentUser=null; form={};
+  document.getElementById('loginErr').classList.remove('show');
+  document.getElementById('scr-app').classList.remove('active');
+  document.getElementById('mainTabBar').style.display='none';
+  document.getElementById('scr-login').classList.add('active');
+}
+
+/* ── ENTER APP ──────────────────────────────────────────────── */
+function enterApp() {
+  document.getElementById('scr-login').classList.remove('active');
+  document.getElementById('scr-app').classList.add('active');
+  document.getElementById('topbarSub').textContent =
+    currentUser.full_name + ' · ' + currentUser.role + ' · ' + currentUser.district;
+
+  // One interface for everyone — pre-populate from QR
+  document.getElementById('mainTabBar').style.display = 'flex';
+
+  // Pre-fill district and cascade
+  var dist = currentUser.district || '';
+  var distEl = document.getElementById('ds-district');
+  if (distEl) distEl.value = dist;
+  if (dist) cascadeChiefdom();
+
+  // Pre-populate conveyor info in Step 2 from logged-in user
+  form.verifiedDriver   = currentUser;
+  form.driverName       = currentUser.full_name || '';
+  form.driverUsername   = currentUser.username  || '';
+  form.driverPhone      = currentUser.phone      || '';
+  form.driverDistrict   = currentUser.district   || '';
+
+  // Show conveyor info card in Step 2 immediately
+  var resultEl = document.getElementById('driverResult');
+  if (resultEl) {
+    document.getElementById('driverName').textContent     = form.driverName;
+    document.getElementById('driverPhone').textContent    = form.driverPhone;
+    document.getElementById('driverDistrict').textContent = form.driverDistrict;
+    resultEl.classList.add('show');
+  }
+
+  switchTab('dashboard');
+}
+
+/* ── TABS ──────────────────────────────────────────────────── */
+const ALL_PANELS = ['dashboard','dispatch','records','pending'];
+function switchTab(name) {
+  ALL_PANELS.forEach(p => {
+    document.getElementById('panel-'+p)?.classList.remove('active');
+    document.getElementById('tab-'+p)?.classList.remove('active');
+  });
+  document.getElementById('panel-'+name)?.classList.add('active');
+  document.getElementById('tab-'+name)?.classList.add('active');
+  if (name==='dashboard') renderDashboard();
+  if (name==='records')   renderRecords();
+  if (name==='pending')   renderSync();
+  if (name==='mytrips')   renderMyTrips();
+}
+
+/* ── CASCADE ──────────────────────────────────────────────── */
+function cascadeChiefdom() {
+  const d = document.getElementById('ds-district').value;
+  const chiefSel = document.getElementById('ds-chiefdom');
+  const phuSel   = document.getElementById('ds-phu');
+  chiefSel.innerHTML='<option value="">Select Chiefdom...</option>'; chiefSel.disabled=true;
+  phuSel.innerHTML='<option value="">Select PHU...</option>'; phuSel.disabled=true;
+  document.getElementById('cnt-chiefdom').textContent='';
+  document.getElementById('cnt-phu').textContent='';
+  if (!d||!locationData[d]) return;
+  chiefSel.disabled=false;
+  Object.keys(locationData[d]).sort().forEach(c => {
+    const o=document.createElement('option'); o.value=c; o.textContent=c; chiefSel.appendChild(o);
+  });
+  const n=Object.keys(locationData[d]).length;
+  document.getElementById('cnt-chiefdom').textContent = n + ' chiefdom'+(n!==1?'s':'');
+}
+
+function cascadePHU() {
+  const raw = document.getElementById('ds-district').value.trim();
+  const d   = Object.keys(locationData).find(function(k){ return k.toLowerCase() === raw.toLowerCase(); }) || raw;
+  const c   = document.getElementById('ds-chiefdom').value;
+  const phuSel=document.getElementById('ds-phu');
+  phuSel.innerHTML='<option value="">Select PHU...</option>'; phuSel.disabled=true;
+  document.getElementById('cnt-phu').textContent='';
+  if (!d||!c||!locationData[d]?.[c]) return;
+  phuSel.disabled=false;
+  locationData[d][c].forEach(p => {
+    const o=document.createElement('option'); o.value=p; o.textContent=p; phuSel.appendChild(o);
+  });
+  const n=locationData[d][c].length;
+  document.getElementById('cnt-phu').textContent = n + ' facilit'+(n!==1?'ies':'y');
+}
+
+function updateTotal() { /* single field — no-op */ }
+
+function updatePlate() {
+  const L=document.getElementById('vehLetters').value||'—';
+  const N=document.getElementById('vehNumbers').value||'—';
+  document.getElementById('platePrev').textContent = L.padEnd(3,'—')+' - '+N.padEnd(3,'—');
+}
+
+/* ── DISPATCH STEPS ─────────────────────────────────────────── */
+function goStep2() {
+  const district=document.getElementById('ds-district').value;
+  const chiefdom=document.getElementById('ds-chiefdom').value;
+  const phu=document.getElementById('ds-phu').value;
+  const dualai=parseInt(document.getElementById('qty-dualai').value)||0;
+  if (!district||!chiefdom||!phu) { toast('Select District, Chiefdom and PHU.','error'); return; }
+  if (dualai===0) { toast('Enter Dual-AI ITN quantity.','error'); return; }
+  // Hard duplicate check
+  const dupKey=(district+'|'+chiefdom+'|'+phu).toLowerCase();
+  const dup=dispatches.find(r=>((r.destination_district||'')+'|'+(r.chiefdom||'')+'|'+(r.phu||'')).toLowerCase()===dupKey);
+  if (dup) { toast('This PHU already has a dispatch — '+dup.dispatch_id,'error'); return; }
+  form.district=district; form.chiefdom=chiefdom; form.phu=phu; form.dualai=dualai;
+  setStep(2);
+}
+
+function goStep3() {
+  if (!form.verifiedDriver) { toast('Please verify the conveyor first.','error'); return; }
+  const L=document.getElementById('vehLetters').value.trim();
+  const N=document.getElementById('vehNumbers').value.trim();
+  if (L.length<2||N.length<2) { toast('Please enter a valid vehicle plate.','error'); return; }
+  form.vehicle = L.toUpperCase()+'-'+N;
+  const now=new Date();
+  form.dispId  = 'MOVE-'+now.getFullYear()+String(now.getMonth()+1).padStart(2,'0')+String(now.getDate()).padStart(2,'0')+'-'+Math.floor(1000+Math.random()*9000);
+  form.dateTime = now.toISOString();
+
+  document.getElementById('reviewContent').innerHTML = `
+    <div class="summ-item"><span class="sk">Dispatch ID</span><span class="sv" style="color:var(--navy);">${form.dispId}</span></div>
+    <div class="summ-item"><span class="sk">Date &amp; Time</span><span class="sv">${new Date(form.dateTime).toLocaleString('en-SL')}</span></div>
+    <div class="summ-item"><span class="sk">DMS Staff</span><span class="sv">${currentUser.full_name}</span></div>
+    <div class="summ-item"><span class="sk">District → Chiefdom</span><span class="sv">${form.district} → ${form.chiefdom}</span></div>
+    <div class="summ-item"><span class="sk">Destination PHU</span><span class="sv" style="color:var(--navy);font-weight:700;">${form.phu}</span></div>
+    <div class="summ-item"><span class="sk">Dual-AI ITNs</span><span class="sv" style="font-size:18px;color:var(--navy);">${form.dualai}</span></div>
+    <div class="summ-item"><span class="sk">Driver</span><span class="sv">${form.driverName} (${form.driverUsername})</span></div>
+    <div class="summ-item"><span class="sk">Vehicle Plate</span><span class="sv">${form.vehicle}</span></div>
+  `;
+  setStep(3);
+}
+
+function backToStep1() { setStep(1); }
+function backToStep2() { setStep(2); }
+
+function setStep(n) {
+  document.getElementById('step1').style.display = n===1?'block':'none';
+  document.getElementById('step2').style.display = n===2?'block':'none';
+  document.getElementById('step3').style.display = n===3?'block':'none';
+  document.getElementById('step-receipt').style.display = 'none';
+  for (let i=1;i<=3;i++) {
+    const dot=document.getElementById('step'+i+'dot');
+    dot.classList.remove('active','done');
+    if (i<n) dot.classList.add('done');
+    else if (i===n) dot.classList.add('active');
+    if (i<3) document.getElementById('line'+i+(i+1))?.classList.toggle('done', i<n);
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+function newDispatch() {
+  form={};
+  document.getElementById('qty-dualai').value='0';
+  document.getElementById('qtyTotal').textContent='0';
+  document.getElementById('ds-chiefdom').innerHTML='<option value="">Select Chiefdom...</option>'; document.getElementById('ds-chiefdom').disabled=true;
+  document.getElementById('ds-phu').innerHTML='<option value="">Select PHU...</option>'; document.getElementById('ds-phu').disabled=true;
+  document.getElementById('cnt-chiefdom').textContent=''; document.getElementById('cnt-phu').textContent='';
+  // Re-populate from logged-in user
+  form.verifiedDriver = currentUser;
+  form.driverName     = currentUser.full_name || '';
+  form.driverUsername = currentUser.username  || '';
+  form.driverPhone    = currentUser.phone     || '';
+  form.driverDistrict = currentUser.district  || '';
+  var driverResultEl = document.getElementById('driverResult');
+  if (driverResultEl) {
+    document.getElementById('driverName').textContent     = form.driverName;
+    document.getElementById('driverPhone').textContent    = form.driverPhone;
+    document.getElementById('driverDistrict').textContent = form.driverDistrict;
+    driverResultEl.classList.add('show');
+  }
+  document.getElementById('driverNotFound').classList.remove('show');
+  document.getElementById('vehLetters').value=''; document.getElementById('vehNumbers').value='';
+  document.getElementById('platePrev').textContent='— — —';
+  stopDriverScanner();
+  document.getElementById('step-receipt').style.display='none';
+  if (currentUser.district && locationData[currentUser.district]) {
+    var inputEl = document.getElementById('ds-district'); if (inputEl) inputEl.value = currentUser.district || ''; cascadeChiefdom();
+  } else { document.getElementById('ds-district').value=''; }
+  setStep(1);
+}
+
+/* ── DRIVER VERIFY ────────────────────────────────────────── */
+function verifyDriver(qrText) {
+  var resultEl   = document.getElementById('driverResult');
+  var notFoundEl = document.getElementById('driverNotFound');
+  if (!qrText) { toast('No QR data.', 'error'); return; }
+
+  // Parse SBD ID QR
+  var parsed = { name:'', id:'', role:'', district:'', tel:'' };
+  if (qrText.indexOf('Name:') !== -1 || qrText.indexOf('ID:') !== -1) {
+    qrText.split('\n').forEach(function(line) {
+      var s = line.indexOf(':'); if (s === -1) return;
+      var k = line.substring(0, s).trim().toLowerCase();
+      var v = line.substring(s + 1).trim();
+      if (k === 'name')     parsed.name     = v;
+      if (k === 'id')       parsed.id       = v;
+      if (k === 'role')     parsed.role     = v;
+      if (k === 'district') parsed.district = v;
+      if (k === 'tel')      parsed.tel      = v;
+    });
+  } else {
+    try { var o = JSON.parse(qrText); parsed.id = o.id||o.ID||qrText; parsed.name = o.name||o.Name||''; parsed.role = o.role||o.Role||''; parsed.district = o.district||o.District||''; parsed.tel = o.tel||o.phone||''; }
+    catch(e) { parsed.id = qrText.trim(); }
+  }
+
+  // Check role — must be Conveyor
+  if (!parsed.role || parsed.role.toLowerCase() !== 'conveyor') {
+    resultEl.classList.remove('show');
+    document.getElementById('driverNotFound').textContent =
+      parsed.role ? (parsed.name || 'This person') + ' is a ' + parsed.role + ', not a Conveyor.' : 'Role not found in QR.';
+    document.getElementById('driverNotFound').classList.add('show');
+    form.verifiedDriver = null; return;
+  }
+
+  // Use QR data directly
+  var name     = parsed.name     || '';
+  var district = parsed.district || '';
+  var phone    = parsed.tel      || '';
+  var username = parsed.id       || name;
+
+  if (!name) { resultEl.classList.remove('show'); notFoundEl.classList.add('show'); form.verifiedDriver=null; return; }
+
+  form.verifiedDriver = matched || parsed;
+  form.driverUsername = username;
+  form.driverName     = name;
+
+  document.getElementById('driverName').textContent = name;
+  document.getElementById('driverMeta').textContent =
+    district + (vehicle ? ' · Vehicle: ' + vehicle : '') + (phone ? ' · ' + phone : '');
+  resultEl.classList.add('show');
+  notFoundEl.classList.remove('show');
+
+  if (vehicle) {
+    var p = vehicle.split('-');
+    if (p.length >= 2) { document.getElementById('vehLetters').value=p[0]; document.getElementById('vehNumbers').value=p[1]; updatePlate(); }
+  }
+  toast('Conveyor ' + name + ' verified ✓', 'success');
+}
+
+function toggleDriverScanner() {
+  const wrap=document.getElementById('driverScannerWrap');
+  if (wrap.style.display==='none') {
+    wrap.style.display='block';
+    if (typeof Html5Qrcode==='undefined') { toast('QR scanner unavailable.','error'); return; }
+    driverScanner=new Html5Qrcode('driverQrReader');
+    driverScanner.start({facingMode:'environment'},{fps:10,qrbox:{width:200,height:200}},
+      decoded => { stopDriverScanner(); verifyDriver(decoded.trim()); },
+      () => {}
+    ).catch(() => { toast('Camera error.','error'); wrap.style.display='none'; });
+  } else { stopDriverScanner(); }
+}
+
+function stopDriverScanner() {
+  if (driverScanner) { driverScanner.stop().catch(()=>{}); driverScanner=null; }
+  document.getElementById('driverScannerWrap').style.display='none';
+}
+
+/* ── CONFIRMATION ──────────────────────────────────────────── */
+function showConfirm() {
+  // Build summary for review
+  var rows = [
+    ['Dispatch ID',    form.dispId],
+    ['Destination',    form.district + ' → ' + form.chiefdom],
+    ['PHU',            form.phu],
+    ['Dual-AI ITNs',  form.dualai],
+    ['Conveyor',       form.driverName],
+    ['Vehicle',        form.vehicle],
+  ];
+  var html = rows.map(function(r) {
+    return '<div style="display:flex;justify-content:space-between;padding:4px 0;border-bottom:1px solid var(--border);">' +
+      '<span style="color:var(--text-s);">' + r[0] + '</span>' +
+      '<span style="font-weight:600;color:var(--text);">' + r[1] + '</span>' +
+      '</div>';
+  }).join('');
+  document.getElementById('confirmSummary').innerHTML = html;
+  document.getElementById('confirmModal').style.display = 'flex';
+}
+
+function closeConfirm() {
+  document.getElementById('confirmModal').style.display = 'none';
+  toast('Go back and confirm your details before submitting.', '');
+}
+
+function confirmAndSubmit() {
+  document.getElementById('confirmModal').style.display = 'none';
+  submitDispatch();
+}
+
+/* ── SUBMIT + RECEIPT ─────────────────────────────────────── */
+async function submitDispatch() {
+  const btn=document.getElementById('submitDispatch');
+  btn.disabled=true; btn.innerHTML='<span class="spin"></span> SUBMITTING…';
+
+  const record = {
+    action:'itn_movement',
+    dispatch_id:form.dispId, timestamp:form.dateTime,
+    staff_name:currentUser.full_name, staff_username:currentUser.username,
+    staff_district:currentUser.district,
+    destination_district:form.district, chiefdom:form.chiefdom, phu:form.phu,
+    itn_type:'Dual-AI', dualai_qty:form.dualai, total_qty:form.dualai,
+    driver_name:form.driverName, driver_username:form.driverUsername,
+    vehicle:form.vehicle, status:'dispatched', synced:false
+  };
+
+  dispatches.push(record);
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(dispatches));
+
+  let synced=false;
+  if (navigator.onLine) {
+    try {
+      await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(record)});
+      record.synced=true; synced=true;
+    } catch(e) { pending.push(record); localStorage.setItem(STORAGE_PEND, JSON.stringify(pending)); }
+  } else { pending.push(record); localStorage.setItem(STORAGE_PEND, JSON.stringify(pending)); }
+
+  const idx=dispatches.findIndex(r=>r.dispatch_id===record.dispatch_id);
+  if (idx>=0) dispatches[idx].synced=record.synced;
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(dispatches));
+
+  lastRecord = record;
+  showReceipt(record, synced);
+
+  btn.disabled=false;
+  btn.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg> SUBMIT DISPATCH';
+}
+
+function showReceipt(r, synced) {
+  // Fill receipt fields
+  document.getElementById('receiptDispatchBadge').textContent = r.dispatch_id;
+  document.getElementById('r-dispatch-id').textContent = r.dispatch_id;
+  document.getElementById('r-datetime').textContent    = new Date(r.timestamp).toLocaleString('en-SL');
+  document.getElementById('r-staff').textContent       = r.staff_name;
+  document.getElementById('r-staff-user').textContent  = r.staff_username;
+  document.getElementById('r-staff-district').textContent = r.staff_district;
+  document.getElementById('r-dest-district').textContent  = r.destination_district;
+  document.getElementById('r-chiefdom').textContent    = r.chiefdom;
+  document.getElementById('r-phu').textContent         = r.phu;
+  document.getElementById('r-total').textContent       = r.total_qty;
+  document.getElementById('r-driver').textContent      = r.driver_name;
+  document.getElementById('r-driver-user').textContent = r.driver_username;
+  document.getElementById('r-vehicle').textContent     = r.vehicle;
+  document.getElementById('r-verify-code').textContent = r.dispatch_id.slice(-6).toUpperCase();
+  document.getElementById('r-generated').textContent   = new Date().toLocaleString('en-SL');
+
+  // Generate QR code with full dispatch info
+  const qrContainer = document.getElementById('receiptQR');
+  qrContainer.innerHTML = '';
+
+  const qrData = JSON.stringify({
+    type:         'ICF-SL-ITN-MOVEMENT',
+    dispatch_id:  r.dispatch_id,
+    date:         r.timestamp,
+    district:     r.destination_district,
+    chiefdom:     r.chiefdom,
+    phu:          r.phu,
+    itn_type:     'Dual-AI',
+    total:        r.total_qty,
+    driver:       r.driver_name,
+    vehicle:      r.vehicle,
+    staff:        r.staff_name,
+    verify_code:  r.dispatch_id.slice(-6).toUpperCase()
+  });
+
+  if (typeof QRCode !== 'undefined') {
+    try {
+      new QRCode(qrContainer, {
+        text:         qrData,
+        width:        200,
+        height:       200,
+        colorDark:    '#004080',
+        colorLight:   '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    } catch(e) { console.error('QR error:', e); }
+  }
+
+  // Show receipt, hide steps
+  document.getElementById('step1').style.display='none';
+  document.getElementById('step2').style.display='none';
+  document.getElementById('step3').style.display='none';
+  document.getElementById('step-receipt').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
+
+  toast(synced ? '✅ Dispatched & synced to Google Sheets!' : '✔ Saved locally — will sync when online.',
+        synced ? 'success' : '');
+}
+
+function downloadReceipt() {
+  const canvas = document.querySelector('#receiptQR canvas');
+  if (!canvas) { toast('QR code not available.','error'); return; }
+  const link=document.createElement('a');
+  link.download = (lastRecord ? lastRecord.dispatch_id : 'dispatch') + '-qr.png';
+  link.href = canvas.toDataURL('image/png');
+  link.click();
+}
+
+function printReceipt() {
+  const canvas = document.querySelector('#receiptQR canvas');
+  const qrSrc = canvas ? canvas.toDataURL('image/png') : '';
+  const r = lastRecord || {};
+  const win = window.open('','_blank');
+  win.document.write(`
+    <!DOCTYPE html><html><head>
+    <title>ICF-SL Dispatch Receipt — ${r.dispatch_id||''}</title>
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+      *{box-sizing:border-box;margin:0;padding:0;}
+      body{font-family:'Oswald',sans-serif;background:#fff;color:#0d1b2a;padding:20px;}
+      .receipt{max-width:420px;margin:0 auto;border:3px solid #c8991a;border-radius:12px;overflow:hidden;}
+      .hdr{background:#004080;padding:16px;text-align:center;color:#fff;}
+      .hdr h2{font-size:18px;font-weight:700;letter-spacing:1px;}
+      .hdr p{font-size:10px;opacity:.7;margin-top:3px;letter-spacing:.5px;text-transform:uppercase;}
+      .qr-sec{padding:16px;text-align:center;border-bottom:2px dashed #dde3ee;}
+      .qr-sec img{border:2px solid #004080;border-radius:8px;width:180px;}
+      .badge{background:#fff8e1;border:1px solid #c8991a;color:#8a6500;padding:3px 12px;border-radius:20px;font-size:11px;font-weight:700;display:inline-block;margin-bottom:10px;letter-spacing:.5px;}
+      .body{padding:14px 16px;}
+      .sec-title{font-size:10px;font-weight:700;letter-spacing:1px;color:#4a5568;text-transform:uppercase;border-bottom:1px solid #dde3ee;padding-bottom:5px;margin:12px 0 8px;}
+      .row{display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid #eee;font-size:12px;}
+      .row:last-child{border-bottom:none;}
+      .k{color:#4a5568;}.v{font-weight:600;text-align:right;}
+      .total-bar{background:#004080;color:#fff;border-radius:8px;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;margin:10px 0;}
+      .total-bar span{font-size:11px;opacity:.8;}.total-bar strong{font-size:22px;font-weight:700;}
+      .verify{text-align:center;background:#e8f1fb;border-radius:8px;padding:10px;margin:10px 0;}
+      .verify .code{font-size:24px;font-weight:700;color:#004080;letter-spacing:5px;}
+      .verify .sub{font-size:10px;color:#4a5568;margin-top:3px;}
+      .footer{background:#e8f1fb;padding:10px;text-align:center;font-size:10px;color:#4a5568;border-top:1px solid #dde3ee;}
+      @media print{body{padding:0;}.receipt{max-width:100%;border:2px solid #c8991a;}}
+    </style></head><body>
+    <div class="receipt">
+      <div class="hdr"><h2>ICF‑SIERRA LEONE</h2><p>ITN Distribution — Movement Receipt</p></div>
+      <div class="qr-sec">
+        <div class="badge">${r.dispatch_id||''}</div><br>
+        ${qrSrc ? `<img src="${qrSrc}" alt="QR Code">` : ''}
+        <p style="font-size:10px;color:#4a5568;margin-top:8px;">Scan at PHU to verify delivery</p>
+      </div>
+      <div class="body">
+        <div class="sec-title">DISPATCH INFORMATION</div>
+        <div class="row"><span class="k">Dispatch ID</span><span class="v">${r.dispatch_id||''}</span></div>
+        <div class="row"><span class="k">Date &amp; Time</span><span class="v">${new Date(r.timestamp||'').toLocaleString('en-SL')}</span></div>
+        <div class="row"><span class="k">DMS Staff</span><span class="v">${r.staff_name||''}</span></div>
+        <div class="row"><span class="k">Staff District</span><span class="v">${r.staff_district||''}</span></div>
+        <div class="sec-title">DESTINATION</div>
+        <div class="row"><span class="k">District</span><span class="v">${r.destination_district||''}</span></div>
+        <div class="row"><span class="k">Chiefdom</span><span class="v">${r.chiefdom||''}</span></div>
+        <div class="row"><span class="k">Health Facility</span><span class="v">${r.phu||''}</span></div>
+        <div class="sec-title">ITN DETAILS</div>
+        <div class="row"><span class="k">ITN Type</span><span class="v">Dual-AI</span></div>
+        <div class="total-bar"><span>TOTAL ITNs DISPATCHED</span><strong>${r.total_qty||0}</strong></div>
+        <div class="sec-title">TRANSPORT</div>
+        <div class="row"><span class="k">Driver</span><span class="v">${r.driver_name||''}</span></div>
+        <div class="row"><span class="k">Username</span><span class="v">${r.driver_username||''}</span></div>
+        <div class="row"><span class="k">Vehicle Plate</span><span class="v">${r.vehicle||''}</span></div>
+        <div class="verify">
+          <div class="code">${(r.dispatch_id||'').slice(-6).toUpperCase()}</div>
+          <div class="sub">Verification Code — Last 6 digits of Dispatch ID</div>
+        </div>
+      </div>
+      <div class="footer">
+        <strong>ICF‑Sierra Leone</strong> · This receipt serves as proof of ITN dispatch<br>
+        Generated: ${new Date().toLocaleString('en-SL')}
+      </div>
+    </div>
+    <script>window.onload=function(){window.print();}<\/script>
+    </body></html>
+  `);
+  win.document.close();
+}
+
+/* ── RETRY SYNC ─────────────────────────────────────────────── */
+async function retrySyncAll() {
+  if (!pending.length) { toast('No pending items.','success'); return; }
+  toast('Syncing '+pending.length+' record(s)…');
+  const still=[]; let synced=0;
+  for (const r of pending) {
+    try {
+      await fetch(GAS_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/json'},body:JSON.stringify(r)});
+      r.synced=true;
+      const idx=dispatches.findIndex(d=>d.dispatch_id===r.dispatch_id);
+      if (idx>=0) dispatches[idx].synced=true;
+      synced++;
+    } catch(e) { still.push(r); }
+  }
+  pending=still;
+  localStorage.setItem(STORAGE_PEND, JSON.stringify(pending));
+  localStorage.setItem(STORAGE_KEY,  JSON.stringify(dispatches));
+  renderSync();
+  toast('Synced '+synced+', '+pending.length+' remaining', synced>0?'success':'error');
+}
+
+/* ── RENDER FUNCTIONS ─────────────────────────────────────── */
+function renderDashboard() {
+  const myRecs = dispatches.filter(r=>r.staff_username===currentUser.username);
+  const today  = new Date().toDateString();
+  const todayN = myRecs.filter(r=>new Date(r.timestamp).toDateString()===today).length;
+  const totalITN = myRecs.reduce((s,r)=>s+(r.total_qty||0),0);
+  document.getElementById('dashStats').innerHTML = `
+    <div class="stat-box navy"><div class="stat-n">${myRecs.length}</div><div class="stat-l">Total Dispatches</div></div>
+    <div class="stat-box green"><div class="stat-n">${totalITN.toLocaleString()}</div><div class="stat-l">Total ITNs</div></div>
+    <div class="stat-box gold"><div class="stat-n">${todayN}</div><div class="stat-l">Today</div></div>
+    <div class="stat-box orange"><div class="stat-n">${pending.length}</div><div class="stat-l">Pending Sync</div></div>
+  `;
+  const recentEl=document.getElementById('dashRecent');
+  const recent=myRecs.slice().reverse().slice(0,5);
+  recentEl.innerHTML = recent.length ? recent.map(r=>dispatchCard(r)).join('') :
+    '<div class="no-data"><svg viewBox="0 0 24 24"><path d="M18 20V10M12 20V4M6 20v-6"/></svg><div>No dispatches yet</div></div>';
+}
+
+function dispatchCard(r) {
+  const d=new Date(r.timestamp);
+  const dtStr=d.toLocaleDateString('en-SL',{day:'2-digit',month:'short'})+' '+d.toLocaleTimeString('en-SL',{hour:'2-digit',minute:'2-digit'});
+  return `<div class="dispatch-card ${r.synced?'synced':'pending'}">
+    <div class="dc-header">
+      <span class="dc-id">${r.dispatch_id}</span>
+      <span class="dc-date">${dtStr}</span>
+    </div>
+    <div class="dc-location">
+      <svg viewBox="0 0 24 24" fill="none" stroke="var(--navy)" stroke-width="2" width="12" height="12"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+      ${r.chiefdom} → ${r.phu}
+    </div>
+    <div class="dc-pills">
+      <span class="pill pill-navy">Dual-AI</span>
+      <span class="pill pill-green">
+        <svg viewBox="0 0 24 24"><path d="M20 7H4a2 2 0 00-2 2v10a2 2 0 002 2h16a2 2 0 002-2V9a2 2 0 00-2-2z"/></svg>
+        ${r.total_qty} ITNs
+      </span>
+      <span class="pill pill-gold">
+        <svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg>
+        ${r.driver_name}
+      </span>
+      <span class="pill ${r.synced?'pill-green':'pill-orange'}">
+        ${r.synced
+          ? '<svg viewBox="0 0 24 24"><polyline points="20 6 9 17 4 12"/></svg> Synced'
+          : '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg> Pending'}
+      </span>
+    </div>
+  </div>`;
+}
+
+function renderRecords() {
+  const el=document.getElementById('recordsList');
+  const recs=dispatches.slice().reverse();
+  el.innerHTML = recs.length ? recs.map(r=>dispatchCard(r)).join('') :
+    '<div class="no-data"><svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg><div>No records yet</div></div>';
+}
+
+function renderSync() {
+  const syncedN=dispatches.filter(r=>r.synced).length;
+  document.getElementById('syncStats').innerHTML = `
+    <div class="stat-box navy"><div class="stat-n">${dispatches.length}</div><div class="stat-l">Total</div></div>
+    <div class="stat-box green"><div class="stat-n">${syncedN}</div><div class="stat-l">Synced</div></div>
+    <div class="stat-box orange"><div class="stat-n">${pending.length}</div><div class="stat-l">Pending</div></div>
+  `;
+  document.getElementById('syncLog').innerHTML = pending.length
+    ? pending.map(r=>dispatchCard(r)).join('')
+    : '<div class="alert success"><svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4"/></svg><div>All records synced ✓</div></div>';
+}
+
+function renderDriverQR() {
+  const u=currentUser;
+  document.getElementById('driverCardName').textContent    = u.full_name;
+  document.getElementById('driverCardDistrict').textContent= u.district;
+  document.getElementById('driverCardVehicle').textContent = u.vehicle ? 'Vehicle: '+u.vehicle : '';
+  document.getElementById('driverCardUsername').textContent= u.username;
+  var container = document.getElementById('driverQrCard');
+  container.innerHTML = '';
+  // Full SBD ID format so DMS app can parse Name, Role, District, Tel
+  var qrText = 'Name: ' + (u.full_name||'') + '\nID: ' + (u.username||'') +
+               '\nRole: ' + (u.role||'') + '\nDistrict: ' + (u.district||'') +
+               '\nTel: ' + (u.phone||'');
+  if (typeof QRCode !== 'undefined') {
+    try {
+      new QRCode(container, {
+        text:         qrText,
+        width:        170,
+        height:       170,
+        colorDark:    '#004080',
+        colorLight:   '#ffffff',
+        correctLevel: QRCode.CorrectLevel.M
+      });
+    } catch(e) {
+      container.textContent = u.username;
+    }
+  } else {
+    container.textContent = u.username;
+  }
+}
+
+function renderMyTrips() {
+  const el=document.getElementById('myTripsList');
+  const recs=dispatches.filter(r=>r.driver_username===currentUser.username).slice().reverse();
+  el.innerHTML = recs.length ? recs.map(r=>dispatchCard(r)).join('') :
+    '<div class="no-data"><svg viewBox="0 0 24 24"><rect x="1" y="3" width="15" height="13"/><polygon points="16 8 20 8 23 11 23 16 16 16 16 8"/><circle cx="5.5" cy="18.5" r="2.5"/><circle cx="18.5" cy="18.5" r="2.5"/></svg><div>No trips recorded yet</div></div>';
+}
+
+/* ── TOAST ──────────────────────────────────────────────────── */
+let _nt=null;
+function toast(msg, type='') {
+  const el=document.getElementById('notif');
+  el.textContent=msg; el.className='notif show'+(type?' '+type:'');
+  clearTimeout(_nt); _nt=setTimeout(()=>el.classList.remove('show'),3500);
+}
+</script>
+</body>
 </html>
