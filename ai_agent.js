@@ -254,7 +254,51 @@
                     error:reject
                 });
             });
-            if(rows&&rows.length>0){console.log('[Analysis] Loaded',rows.length,'rows from CSV export');return rows;}
+            if(rows&&rows.length>0){
+                // Map column labels → field names using LABEL_TO_FIELD
+                const LABEL_TO_FIELD = {
+                    'District':'district','Chiefdom':'chiefdom',
+                    'Health Facility (PHU)':'facility','Community / Village':'community',
+                    'School Name':'school_name','School Enrollment':'school_enrollment',
+                    'EMIS Number':'emis_number','School Status':'school_status','New School?':'is_new_school',
+                    'Head Teacher Name':'head_teacher','Head Teacher Phone':'head_teacher_phone',
+                    'Distribution Date':'distribution_date',
+                    'Total ITNs Received':'itns_received','ITN Type':'itn_type',
+                    'Class 1 Teacher Name':'c1_teacher_name','Class 1 Teacher Phone':'c1_teacher_phone',
+                    'Class 1 — Boys Enrolled':'c1_boys','Class 1 — Boys Received ITN':'c1_boys_itn',
+                    'Class 1 — Girls Enrolled':'c1_girls','Class 1 — Girls Received ITN':'c1_girls_itn',
+                    'Class 2 Teacher Name':'c2_teacher_name','Class 2 Teacher Phone':'c2_teacher_phone',
+                    'Class 2 — Boys Enrolled':'c2_boys','Class 2 — Boys Received ITN':'c2_boys_itn',
+                    'Class 2 — Girls Enrolled':'c2_girls','Class 2 — Girls Received ITN':'c2_girls_itn',
+                    'Class 3 Teacher Name':'c3_teacher_name','Class 3 Teacher Phone':'c3_teacher_phone',
+                    'Class 3 — Boys Enrolled':'c3_boys','Class 3 — Boys Received ITN':'c3_boys_itn',
+                    'Class 3 — Girls Enrolled':'c3_girls','Class 3 — Girls Received ITN':'c3_girls_itn',
+                    'Class 4 Teacher Name':'c4_teacher_name','Class 4 Teacher Phone':'c4_teacher_phone',
+                    'Class 4 — Boys Enrolled':'c4_boys','Class 4 — Boys Received ITN':'c4_boys_itn',
+                    'Class 4 — Girls Enrolled':'c4_girls','Class 4 — Girls Received ITN':'c4_girls_itn',
+                    'Class 5 Teacher Name':'c5_teacher_name','Class 5 Teacher Phone':'c5_teacher_phone',
+                    'Class 5 — Boys Enrolled':'c5_boys','Class 5 — Boys Received ITN':'c5_boys_itn',
+                    'Class 5 — Girls Enrolled':'c5_girls','Class 5 — Girls Received ITN':'c5_girls_itn',
+                    'Total Boys Enrolled':'total_boys','Total Girls Enrolled':'total_girls',
+                    'Total Pupils Enrolled':'total_pupils',
+                    'Total Boys Received ITN':'total_boys_itn','Total Girls Received ITN':'total_girls_itn',
+                    'Total ITNs Distributed':'total_itn','ITNs Remaining':'itns_remaining',
+                    'Proportion Boys (%)':'prop_boys','Proportion Girls (%)':'prop_girls',
+                    'Boys ITN Coverage (%)':'coverage_boys','Girls ITN Coverage (%)':'coverage_girls',
+                    'Overall ITN Coverage (%)':'coverage_total',
+                    'Survey Date':'survey_date','GPS Latitude':'gps_lat','GPS Longitude':'gps_lng',
+                    'GPS Accuracy (m)':'gps_acc',
+                    'Health Staff Name':'team1_name','Health Staff Phone':'team1_phone','Health Staff Signed?':'team1_signature',
+                    'Teacher Name':'team2_name','Teacher Phone':'team2_phone','Teacher Signed?':'team2_signature',
+                };
+                const mapped = rows.map(r => {
+                    const obj = {};
+                    Object.entries(r).forEach(([k,v]) => { obj[LABEL_TO_FIELD[k]||k] = v; });
+                    return obj;
+                });
+                console.log('[Analysis] Loaded',mapped.length,'rows from CSV export (mapped)');
+                return mapped;
+            }
         }catch(e){console.warn('[Analysis] CSV export:',e.message);}
 
         console.warn('[Analysis] Sheet fetch failed — local data only');
