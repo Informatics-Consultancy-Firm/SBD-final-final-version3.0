@@ -234,7 +234,7 @@
         try{
             const res=await Promise.race([
                 fetch(GAS_URL+'?action=getData'),
-                new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),20000))
+                new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),8000))
             ]);
             if(res.ok){
                 const d=await res.json();
@@ -1021,14 +1021,23 @@
     window.anRefresh = async function(){
         const body=document.getElementById('analysisBody');
         if(body)body.innerHTML=`<div class="an-loading"><div class="an-spinner"></div><div class="an-load-txt">Refreshing from ICF-SL Server…</div></div>`;
+        const btn=document.getElementById('anRefreshBtn');
+        if(btn){btn.disabled=true;btn.textContent='↻ Loading…';}
         _refreshCountdown = 60;
-        updateRefreshBtn();
-        const rows = await fetchSheetData();
-        _sheetRows = rows;
-        window._TARGETS = buildTargetsFromCSV();
-        runAnalysis(rows);
-        const tBody = document.getElementById('targetsBody');
-        if(tBody && tBody.style.display !== 'none') renderTargetsTab();
+        try {
+            const rows = await fetchSheetData();
+            _sheetRows = rows;
+            window._TARGETS = buildTargetsFromCSV();
+            runAnalysis(rows);
+            const tBody = document.getElementById('targetsBody');
+            if(tBody && tBody.style.display !== 'none') renderTargetsTab();
+        } catch(e) {
+            console.warn('[Refresh]',e);
+            if(body)body.innerHTML=`<div class="an-no-data"><div style="margin-bottom:12px;">Could not load data — check connection and try again.</div><button onclick="anRefresh()" style="background:#004080;color:#fff;border:none;border-radius:8px;padding:9px 20px;font-family:'Oswald',sans-serif;font-size:12px;font-weight:600;cursor:pointer;">↻ RETRY</button></div>`;
+        } finally {
+            if(btn){btn.disabled=false;}
+            updateRefreshBtn();
+        }
     };
 
     // ════════════════════════════════════════════════════════
