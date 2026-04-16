@@ -1176,35 +1176,41 @@
         </div>`;
 
         try {
-            // 1. Load dms_cascading.csv → build district > chiefdom > [facilities]
-            const csvRes  = await fetch('./dms_cascading.csv').then(r=>r.text()).catch(()=>'');
-            const csvTree = {}; // { district: { chiefdom: [facility,...] } }
-            if (csvRes) {
-                const rows = csvRes.trim().split('\n');
-                const hdr  = rows[0].split(',').map(h=>h.trim().toLowerCase());
-                const iD   = hdr.indexOf('district'), iC=hdr.indexOf('chiefdom'), iF=hdr.indexOf('facility');
-                rows.slice(1).forEach(row => {
-                    const cols = row.split(',');
-                    const d=(cols[iD]||'').trim(), c=(cols[iC]||'').trim(), f=(cols[iF]||'').trim();
-                    if (!d||!c||!f) return;
-                    if (!csvTree[d]) csvTree[d]={};
-                    if (!csvTree[d][c]) csvTree[d][c]=[];
-                    if (!csvTree[d][c].includes(f)) csvTree[d][c].push(f);
+            const lc = v => String(v||'').trim().toLowerCase();
+            const key = (d,c,f) => lc(d)+'|'+lc(c)+'|'+lc(f);
+
+            // 1. Load dms_cascading.csv using PapaParse → district > chiefdom > [facilities]
+            const csvTree = {};
+            await new Promise(resolve => {
+                Papa.parse('./dms_cascading.csv', {
+                    download:true, header:true, skipEmptyLines:true,
+                    complete(res) {
+                        (res.data||[]).forEach(row => {
+                            // Support both District/Chiefdom/Facility and adm1/adm2/adm3
+                            const d=(row['District']||row['district']||row['adm1']||'').trim();
+                            const c=(row['Chiefdom']||row['chiefdom']||row['adm2']||'').trim();
+                            const f=(row['Facility']||row['facility']||row['Name of PHU']||row['hf']||row['adm3']||'').trim();
+                            if (!d||!c||!f) return;
+                            if (!csvTree[d]) csvTree[d]={};
+                            if (!csvTree[d][c]) csvTree[d][c]=[];
+                            if (!csvTree[d][c].includes(f)) csvTree[d][c].push(f);
+                        });
+                        resolve();
+                    },
+                    error(){ resolve(); }
                 });
-            }
+            });
 
             // Fallback to ALL_LOCATION_DATA if CSV empty
             if (!Object.keys(csvTree).length) {
                 const loc = window.ALL_LOCATION_DATA || {};
-                for (const dist in loc) {
-                    for (const ch in loc[dist]) {
+                for (const dist in loc)
+                    for (const ch in loc[dist])
                         for (const fac in loc[dist][ch]) {
                             if (!csvTree[dist]) csvTree[dist]={};
                             if (!csvTree[dist][ch]) csvTree[dist][ch]=[];
                             if (!csvTree[dist][ch].includes(fac)) csvTree[dist][ch].push(fac);
                         }
-                    }
-                }
             }
 
             if (!Object.keys(csvTree).length) {
@@ -1213,9 +1219,7 @@
             }
 
             // 2. Fetch ITN Movement and PHU Receipts from GAS
-            const gasUrl = (typeof window !== 'undefined' && window.WEBHOOK_URL) || 
-                           document.querySelector('[data-gas-url]')?.dataset.gasUrl ||
-                           'https://script.google.com/macros/s/AKfycbymRy-M5v0fVLWUjw4IXYhd1oIR2ZvnP_Dzr_iGR-Th0cMIpmE2ntGeujWYH7-C6NHIzA/exec';
+            const gasUrl = 'https://script.google.com/macros/s/AKfycbymRy-M5v0fVLWUjw4IXYhd1oIR2ZvnP_Dzr_iGR-Th0cMIpmE2ntGeujWYH7-C6NHIzA/exec';
 
             const [dispRaw, recRaw] = await Promise.allSettled([
                 fetch(gasUrl + '?action=getAllDispatches').then(r=>r.json()).catch(()=>[]),
@@ -1225,20 +1229,27 @@
             const dispatched = dispRaw.status==='fulfilled' && Array.isArray(dispRaw.value) ? dispRaw.value : [];
             const received   = recRaw.status==='fulfilled'  && Array.isArray(recRaw.value)  ? recRaw.value  : [];
 
-            // Build PHU sets (lowercase for matching)
-            const lc = s => String(s||'').trim().toLowerCase();
-            const dispSet = new Set(dispatched.map(d => lc(d.phu || d['health_facility_phu'] || d['health facility (phu)'] || '')));
-            const recSet  = new Set(received.map(r  => lc(r.phu || '')));
+            // Build composite key sets: district|chiefdom|phu (lowercase)
+            // ITN Movement:  district=Destination District, chiefdom=Chiefdom, phu=Health Facility (PHU)
+            // PHU Receipts:  district=District, chiefdom=Chiefdom, phu=PHU
+            const dispSet = new Set(dispatched.map(d => key(d.district, d.chiefdom, d.phu)));
+            const recSet  = new Set(received.map(r   => key(r.district, r.chiefdom, r.phu)));
+
+            // Also build phu-only sets as fallback for loose matching
+            const dispPhuSet = new Set(dispatched.map(d => lc(d.phu)));
+            const recPhuSet  = new Set(received.map(r   => lc(r.phu)));
+
+            function isDispatched(d,c,f){ return dispSet.has(key(d,c,f)) || dispPhuSet.has(lc(f)); }
+            function isReceived(d,c,f){   return recSet.has(key(d,c,f))  || recPhuSet.has(lc(f));  }
 
             // 3. Totals
             let totTotal=0, totReceived=0, totPending=0, totNot=0;
-            Object.values(csvTree).forEach(chiefdoms => {
-                Object.values(chiefdoms).forEach(phus => {
-                    phus.forEach(phu => {
+            Object.keys(csvTree).forEach(district => {
+                Object.keys(csvTree[district]).forEach(chiefdom => {
+                    csvTree[district][chiefdom].forEach(phu => {
                         totTotal++;
-                        const pk=lc(phu);
-                        if (dispSet.has(pk) && recSet.has(pk)) totReceived++;
-                        else if (dispSet.has(pk)) totPending++;
+                        if (isDispatched(district,chiefdom,phu) && isReceived(district,chiefdom,phu)) totReceived++;
+                        else if (isDispatched(district,chiefdom,phu)) totPending++;
                         else totNot++;
                     });
                 });
@@ -1273,10 +1284,13 @@
                 const duid = 'dist_' + district.replace(/\s+/g,'_').replace(/[^a-z0-9_]/gi,'');
                 // District stats
                 let dRec=0,dPend=0,dNot=0,dTotal=0;
-                Object.values(csvTree[district]).forEach(phus => phus.forEach(p => {
-                    const pk=lc(p); dTotal++;
-                    if(dispSet.has(pk)&&recSet.has(pk))dRec++; else if(dispSet.has(pk))dPend++; else dNot++;
-                }));
+                Object.keys(csvTree[district]).forEach(chiefdom => {
+                    csvTree[district][chiefdom].forEach(phu => {
+                        dTotal++;
+                        if(isDispatched(district,chiefdom,phu)&&isReceived(district,chiefdom,phu))dRec++;
+                        else if(isDispatched(district,chiefdom,phu))dPend++; else dNot++;
+                    });
+                });
                 const dPct = dTotal ? Math.round(dRec/dTotal*100) : 0;
                 const dBorder = dRec===dTotal?'#28a745':dPend>0?'#f59e0b':'#e2e8f0';
 
@@ -1300,7 +1314,7 @@
                 Object.keys(csvTree[district]).sort().forEach(chiefdom => {
                     const phus = csvTree[district][chiefdom];
                     let cRec=0,cPend=0,cNot=0;
-                    phus.forEach(p=>{ const pk=lc(p); if(dispSet.has(pk)&&recSet.has(pk))cRec++; else if(dispSet.has(pk))cPend++; else cNot++; });
+                    phus.forEach(phu=>{ if(isDispatched(district,chiefdom,phu)&&isReceived(district,chiefdom,phu))cRec++; else if(isDispatched(district,chiefdom,phu))cPend++; else cNot++; });
                     const cPct = phus.length ? Math.round(cRec/phus.length*100) : 0;
                     const borderColor = cRec===phus.length ? '#28a745' : cPend>0 ? '#f59e0b' : '#e2e8f0';
                     const uid = 'ch_' + Math.random().toString(36).slice(2,8);
@@ -1319,8 +1333,7 @@
                         </div>
                         <div id="${uid}" style="display:none;padding:10px 16px 12px;">
                             ${phus.map(phu => {
-                                const pk=lc(phu);
-                                const wasD=dispSet.has(pk), wasR=recSet.has(pk);
+                                const wasD=isDispatched(district,chiefdom,phu), wasR=isReceived(district,chiefdom,phu);
                                 let icon,label,bg,textColor;
                                 if (wasD&&wasR)    { icon='✅'; label='Received';    bg='#e8f5e9'; textColor='#1e7a34'; }
                                 else if (wasD)     { icon='⏳'; label='Pending';     bg='#fffbeb'; textColor='#92400e'; }
